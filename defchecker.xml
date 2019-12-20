@@ -1,0 +1,8 @@
+<!--
+    To fix "symbol cannot be resolved" warnings when using Cursive + Midje, import this
+    scheme under IntelliJ's Preferences > Languages & Frameworks > Clojure > Symbol Resolution
+-->
+<ClojureResolveScheme>
+    <item key="midje.checking.checkers.defining/defchecker" resolves-as="clojure.core/def"/>
+    <currentScheme>IDE</currentScheme>
+</ClojureResolveScheme>
