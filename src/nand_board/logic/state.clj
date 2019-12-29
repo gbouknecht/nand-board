@@ -62,3 +62,7 @@
                       #(empty-or-distinct? (wires-vals % :input-pin-id))
                       #(empty? (intersection (gates-pin-ids % :inputs) (wires-vals % :output-pin-id)))
                       #(empty? (intersection (gates-pin-ids % :output) (wires-vals % :input-pin-id)))))
+
+(defn initialize []
+  {:post [(s/valid? ::state %)]}
+  {:gates {} :pins {} :wires {}})

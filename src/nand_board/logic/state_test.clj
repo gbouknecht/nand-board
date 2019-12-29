@@ -1,7 +1,7 @@
 (ns nand-board.logic.state-test
   (:require [clojure.spec.alpha :as s]
             [nand-board.logic.state :as state]
-            [midje.sweet :refer [facts =>]]))
+            [midje.sweet :refer [=> fact facts]]))
 
 (facts
   "state data structure"
@@ -71,3 +71,10 @@
                                 (update-in [:wires] assoc 3 {:output-pin-id 2 :input-pin-id 5})
                                 (update-in [:pins 2 :wire-ids] conj 3)
                                 (update-in [:pins 5 :wire-ids] conj 3))) => false))
+
+(fact
+  "state initialization should give a state with no gates, pins and wires"
+  (let [state (state/initialize)]
+    (empty? (:gates state)) => true
+    (empty? (:pins state)) => true
+    (empty? (:wires state)) => true))
