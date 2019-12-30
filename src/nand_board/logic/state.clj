@@ -13,6 +13,9 @@
           (entry->pairs [e] (for [first (seq (first-fn e)) second (seq (second-fn e))] [first second]))]
     (set (mapcat entry->pairs map))))
 
+(defn- same-key-id-pairs [map id]
+  (every? #(apply = %) (flatten-pairs map key #(get (val %) id))))
+
 (defn- empty-or-distinct? [coll]
   (or (empty? coll) (apply distinct? coll)))
 
@@ -43,19 +46,22 @@
 (s/def ::input-or-output (s/keys :req-un [::pin-id ::val]))
 (s/def ::inputs (s/coll-of ::input-or-output :kind vector? :count 2))
 (s/def ::output ::input-or-output)
-(s/def ::gate (s/and (s/keys :req-un [::inputs ::output])
-                     #(apply distinct? (tree-seq-map-get % :pin-id))))
 (s/def ::gate-id ::id)
-(s/def ::gates (s/map-of ::gate-id ::gate))
+(s/def ::gate (s/and (s/keys :req-un [::gate-id ::inputs ::output])
+                     #(apply distinct? (tree-seq-map-get % :pin-id))))
+(s/def ::gates (s/and (s/map-of ::gate-id ::gate)
+                      #(same-key-id-pairs % :gate-id)))
 (s/def ::wire-id ::id)
 (s/def ::wire-ids (s/coll-of ::wire-id :kind set? :min-count 1))
-(s/def ::pin (s/keys :req-un [::gate-id] :opt-un [::wire-ids]))
-(s/def ::pins (s/map-of ::pin-id ::pin))
+(s/def ::pin (s/keys :req-un [::pin-id ::gate-id] :opt-un [::wire-ids]))
+(s/def ::pins (s/and (s/map-of ::pin-id ::pin)
+                     #(same-key-id-pairs % :pin-id)))
 (s/def ::output-pin-id ::pin-id)
 (s/def ::input-pin-id ::pin-id)
-(s/def ::wire (s/and (s/keys :req-un [::output-pin-id ::input-pin-id])
+(s/def ::wire (s/and (s/keys :req-un [::wire-id ::output-pin-id ::input-pin-id])
                      #(distinct? (:output-pin-id %) (:input-pin-id %))))
-(s/def ::wires (s/map-of ::wire-id ::wire))
+(s/def ::wires (s/and (s/map-of ::wire-id ::wire)
+                      #(same-key-id-pairs % :wire-id)))
 (s/def ::state (s/and (s/keys :req-un [::gates ::pins ::wires])
                       #(= (gates-gate-pin-id-pairs %) (pins-gate-pin-id-pairs %))
                       #(= (pins-pin-wire-id-pairs %) (wires-pin-wire-id-pairs %))
