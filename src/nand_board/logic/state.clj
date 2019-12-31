@@ -71,4 +71,27 @@
 
 (defn initialize []
   {:post [(s/valid? ::state %)]}
-  {:gates {} :pins {} :wires {}})
+  {:gates {} :pins {} :wires {} :next-gate-id 0 :next-pin-id 0})
+
+(defn- make-gate [gate-id [pin-id-0 pin-id-1 pin-id-2]]
+  {:gate-id gate-id
+   :inputs  [{:pin-id pin-id-0 :val 0} {:pin-id pin-id-1 :val 0}]
+   :output  {:pin-id pin-id-2 :val 0}})
+
+(defn- make-pins [gate-id pin-ids]
+  (apply merge (map (fn [pin-id] {pin-id {:pin-id pin-id :gate-id gate-id}}) pin-ids)))
+
+(defn add-gate [state]
+  {:pre  [(s/valid? ::state state)]
+   :post [(s/valid? ::state %)]}
+  (let [gate-id (:next-gate-id state)
+        start-pin-id (:next-pin-id state)
+        end-pin-id (+ start-pin-id 3)
+        pin-ids (range start-pin-id end-pin-id)
+        gate (make-gate gate-id pin-ids)
+        pins (make-pins gate-id pin-ids)]
+    (-> state
+        (assoc-in [:gates gate-id] gate)
+        (update-in [:pins] merge pins)
+        (assoc :next-gate-id (inc gate-id))
+        (assoc :next-pin-id end-pin-id))))

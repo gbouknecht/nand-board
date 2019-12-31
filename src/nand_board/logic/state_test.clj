@@ -89,8 +89,25 @@
                                 (update-in [:pins 5 :wire-ids] conj 3))) => false))
 
 (fact
-  "state initialization should give a state with no gates, pins and wires"
+  "state/initialize should give a state with no gates, pins and wires"
   (let [state (state/initialize)]
-    (empty? (:gates state)) => true
-    (empty? (:pins state)) => true
-    (empty? (:wires state)) => true))
+    (:gates state) => empty?
+    (:pins state) => empty?
+    (:wires state) => empty?))
+
+(fact
+  "state/add-gate should add a new gate and pins, no wires"
+  (let [state1 (state/add-gate (state/initialize))
+        state2 (state/add-gate state1)]
+    ((:gates state1) 0) => {:gate-id 0 :inputs [{:pin-id 0 :val 0} {:pin-id 1 :val 0}] :output {:pin-id 2 :val 0}}
+    (:pins state1) => {0 {:pin-id 0 :gate-id 0}
+                       1 {:pin-id 1 :gate-id 0}
+                       2 {:pin-id 2 :gate-id 0}}
+    (:wires state1) => empty?
+    ((:gates state2) 0) => ((:gates state1) 0)
+    ((:gates state2) 1) => {:gate-id 1 :inputs [{:pin-id 3 :val 0} {:pin-id 4 :val 0}] :output {:pin-id 5 :val 0}}
+    (:pins state2) => (merge (:pins state1)
+                             {3 {:pin-id 3 :gate-id 1}
+                              4 {:pin-id 4 :gate-id 1}
+                              5 {:pin-id 5 :gate-id 1}})
+    (:wires state2) => empty?))
