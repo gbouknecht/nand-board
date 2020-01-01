@@ -71,7 +71,7 @@
 
 (defn initialize []
   {:post [(s/valid? ::state %)]}
-  {:gates {} :pins {} :wires {} :next-gate-id 0 :next-pin-id 0})
+  {:gates {} :pins {} :wires {} :next-gate-id 0 :next-pin-id 0 :next-wire-id 0})
 
 (defn- make-gate [gate-id [pin-id-0 pin-id-1 pin-id-2]]
   {:gate-id gate-id
@@ -80,6 +80,9 @@
 
 (defn- make-pins [gate-id pin-ids]
   (apply merge (map (fn [pin-id] {pin-id {:pin-id pin-id :gate-id gate-id}}) pin-ids)))
+
+(defn- make-wire [wire-id output-pin-id input-pin-id]
+  {:wire-id wire-id :output-pin-id output-pin-id :input-pin-id input-pin-id})
 
 (defn add-gate [state]
   {:pre  [(s/valid? ::state state)]
@@ -95,3 +98,14 @@
         (update-in [:pins] merge pins)
         (assoc :next-gate-id (inc gate-id))
         (assoc :next-pin-id end-pin-id))))
+
+(defn add-wire [state output-pin-id input-pin-id]
+  {:pre  [(s/valid? ::state state)]
+   :post [(s/valid? ::state %)]}
+  (let [wire-id (:next-wire-id state)
+        wire (make-wire wire-id output-pin-id input-pin-id)]
+    (-> state
+        (update-in [:pins output-pin-id :wire-ids] (fnil conj #{}) wire-id)
+        (update-in [:pins input-pin-id :wire-ids] (fnil conj #{}) wire-id)
+        (assoc-in [:wires wire-id] wire)
+        (assoc :next-wire-id (inc wire-id)))))

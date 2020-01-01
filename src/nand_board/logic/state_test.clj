@@ -111,3 +111,19 @@
                               4 {:pin-id 4 :gate-id 1}
                               5 {:pin-id 5 :gate-id 1}})
     (:wires state2) => empty?))
+
+(fact
+  "state/add-wire should add a wire between two pins"
+  (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
+        state2 (state/add-wire state1 2 4)
+        state3 (state/add-wire state2 2 6)]
+    (:gates state2) => (:gates state1)
+    (dissoc (:pins state2) 2 4) => (dissoc (:pins state1) 2 4)
+    ((:pins state2) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{0}}
+    ((:pins state2) 4) => {:pin-id 4 :gate-id 1 :wire-ids #{0}}
+    ((:wires state2) 0) => {:wire-id 0 :output-pin-id 2 :input-pin-id 4}
+    (:gates state3) => (:gates state1)
+    (dissoc (:pins state3) 2 6) => (dissoc (:pins state2) 2 6)
+    ((:pins state3) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{0 1}}
+    ((:pins state3) 6) => {:pin-id 6 :gate-id 2 :wire-ids #{1}}
+    ((:wires state3) 1) => {:wire-id 1 :output-pin-id 2 :input-pin-id 6}))
