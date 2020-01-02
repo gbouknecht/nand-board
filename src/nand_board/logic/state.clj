@@ -95,7 +95,7 @@
         pins (make-pins gate-id pin-ids)]
     (-> state
         (assoc-in [:gates gate-id] gate)
-        (update-in [:pins] merge pins)
+        (update :pins merge pins)
         (assoc :next-gate-id (inc gate-id))
         (assoc :next-pin-id end-pin-id))))
 
@@ -109,3 +109,43 @@
         (update-in [:pins input-pin-id :wire-ids] (fnil conj #{}) wire-id)
         (assoc-in [:wires wire-id] wire)
         (assoc :next-wire-id (inc wire-id)))))
+
+(defn- remove-wire-from-pin [state pin-id wire-id]
+  (update-in state [:pins pin-id]
+             (fn [pin]
+               (let [wire-ids (disj (:wire-ids pin) wire-id)]
+                 (if (empty? wire-ids)
+                   (dissoc pin :wire-ids)
+                   (assoc pin :wire-ids wire-ids))))))
+
+(defn- remove-wire-from-pins [state pin-ids wire-id]
+  (reduce #(remove-wire-from-pin %1 %2 wire-id) state pin-ids))
+
+(defn remove-wire [state wire-id]
+  {:pre  [(s/valid? ::state state)
+          (contains? (:wires state) wire-id)]
+   :post [(s/valid? ::state %)]}
+  (let [wire ((:wires state) wire-id)
+        pin-ids ((juxt :output-pin-id :input-pin-id) wire)]
+    (-> state
+        (remove-wire-from-pins pin-ids wire-id)
+        (update :wires dissoc wire-id))))
+
+(defn remove-wires [state wire-ids]
+  {:pre  [(s/valid? ::state state)
+          (or (empty? wire-ids) (apply distinct? wire-ids))]
+   :post [(s/valid? ::state %)]}
+  (reduce #(remove-wire %1 %2) state wire-ids))
+
+(defn remove-gate [state gate-id]
+  {:pre  [(s/valid? ::state state)
+          (contains? (:gates state) gate-id)]
+   :post [(s/valid? ::state %)]}
+  (let [gate ((:gates state) gate-id)
+        pin-ids (tree-seq-map-get gate :pin-id)
+        pins (select-keys (:pins state) pin-ids)
+        wire-ids (set (mapcat :wire-ids (vals pins)))]
+    (-> state
+        (remove-wires wire-ids)
+        (update :gates dissoc gate-id)
+        (update :pins #(apply dissoc % pin-ids)))))
