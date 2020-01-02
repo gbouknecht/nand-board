@@ -131,6 +131,14 @@
     ((:wires state3) 1) => {:wire-id 1 :output-pin-id 2 :input-pin-id 6}))
 
 (fact
+  "state/add-wire should only accept an 'output' pin-id and an 'input' pin-id respectively"
+  (let [state (-> (state/initialize) state/add-gate state/add-gate)]
+    (state/add-wire state 1 0) => (throws AssertionError)
+    (state/add-wire state 8 0) => (throws AssertionError)
+    (state/add-wire state 2 5) => (throws AssertionError)
+    (state/add-wire state 2 6) => (throws AssertionError)))
+
+(fact
   "state/remove-gate should remove gate, pins and wires"
   (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
         state2 (-> state1 (state/add-wire 2 4) (state/add-wire 2 6))

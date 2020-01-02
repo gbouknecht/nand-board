@@ -100,7 +100,9 @@
         (assoc :next-pin-id end-pin-id))))
 
 (defn add-wire [state output-pin-id input-pin-id]
-  {:pre  [(s/valid? ::state state)]
+  {:pre  [(s/valid? ::state state)
+          (some #{output-pin-id} (gates-pin-ids state :output))
+          (some #{input-pin-id} (gates-pin-ids state :inputs))]
    :post [(s/valid? ::state %)]}
   (let [wire-id (:next-wire-id state)
         wire (make-wire wire-id output-pin-id input-pin-id)]
