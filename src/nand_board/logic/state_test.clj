@@ -92,7 +92,7 @@
     (keys ((:pins state3) 4)) =not=> (contains :wire-ids)))
 
 (fact
-  "state/remove-wire my only be called for an existing wire"
+  "state/remove-wire may only be called for an existing wire"
   (-> (state/initialize) (state/remove-wire 0)) => (throws AssertionError))
 
 (fact
@@ -112,3 +112,30 @@
   (let [state1 (-> (state/initialize) state/add-gate (state/add-wire 2 0))
         state2 (state/remove-wires state1 [])]
     state2 => state1))
+
+(fact
+  "state/get-val and state/set-val should get/set value from/to gate inputs/output"
+  (let [state1 (-> (state/initialize) state/add-gate state/add-gate (state/add-wire 2 3))
+        state2 (-> state1 (state/set-val 0 1))
+        state3 (-> state2 (state/set-val 0 0))
+        state4 (-> state3 (state/set-val 1 1) (state/set-val 2 1) (state/set-val 4 1))
+        get-vals (fn [state] (map #(state/get-val state %) (range 0 6)))]
+    (get-vals state2) => [1 0 0 0 0 0]
+    (get-vals state3) => [0 0 0 0 0 0]
+    (get-vals state4) => [0 1 1 0 1 0]))
+
+(fact
+  "state/get-val may only be called for an existing pin"
+  (-> (state/initialize) state/add-gate (state/get-val 3)) => (throws AssertionError))
+
+(fact
+  "state/set-val may only be called for an existing pin"
+  (-> (state/initialize) state/add-gate (state/set-val 3 1)) => (throws AssertionError))
+
+(fact
+  "state/set-val may only be called for a valid value"
+  (let [state (-> (state/initialize) state/add-gate)]
+    (state/set-val state 0 -1) => (throws AssertionError)
+    (state/set-val state 0 0) =not=> (throws AssertionError)
+    (state/set-val state 0 1) =not=> (throws AssertionError)
+    (state/set-val state 0 2) => (throws AssertionError)))

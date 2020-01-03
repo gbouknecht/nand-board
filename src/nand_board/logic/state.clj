@@ -33,7 +33,7 @@
         (assoc :next-pin-id end-pin-id))))
 
 (defn- gate-for-pin-id [state pin-id]
-  ((:gates state) (-> state :pins (get pin-id) :gate-id)))
+  ((:gates state) (get-in state [:pins pin-id :gate-id])))
 
 (defn- gate-input-pin-ids [gate]
   (map :pin-id (:inputs gate)))
@@ -93,3 +93,25 @@
         (remove-wires wire-ids)
         (update :gates dissoc gate-id)
         (update :pins #(apply dissoc % pin-ids)))))
+
+(defn get-val [state pin-id]
+  {:pre  [(s/valid? ::state-spec/state state)
+          (contains? (:pins state) pin-id)]
+   :post [(s/valid? ::state-spec/val %)]}
+  (let [gate (gate-for-pin-id state pin-id)
+        get-val #(if (= (:pin-id %) pin-id) (:val %))]
+    (some get-val (conj (:inputs gate) (:output gate)))))
+
+(defn set-val [state pin-id val]
+  {:pre  [(s/valid? ::state-spec/state state)
+          (contains? (:pins state) pin-id)
+          (s/valid? ::state-spec/val val)]
+   :post [(s/valid? ::state-spec/state %)]}
+  (let [gate-id (get-in state [:pins pin-id :gate-id])
+        set-val #(if (= (:pin-id %) pin-id) (assoc % :val val) %)
+        set-vals (comp vec (partial map set-val))]
+    (update-in state [:gates gate-id]
+               (fn [gate]
+                 (-> gate
+                     (update :output set-val)
+                     (update :inputs set-vals))))))
