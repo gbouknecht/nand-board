@@ -3,14 +3,14 @@
             [nand-board.logic.state :as state]))
 
 (fact
-  "state/initialize should give a state with no gates, pins and wires"
+  "initialize should give a state with no gates, pins and wires"
   (let [state (state/initialize)]
     (:gates state) => empty?
     (:pins state) => empty?
     (:wires state) => empty?))
 
 (fact
-  "state/add-gate should add a new gate and pins, no wires"
+  "add-gate should add a new gate and pins, no wires"
   (let [state1 (state/add-gate (state/initialize))
         state2 (state/add-gate state1)]
     ((:gates state1) 0) => {:gate-id 0 :inputs [{:pin-id 0 :val 0} {:pin-id 1 :val 0}] :output {:pin-id 2 :val 0}}
@@ -28,7 +28,7 @@
     (:wires state2) => empty?))
 
 (fact
-  "state/add-wire should add a wire between two pins"
+  "add-wire should add a wire between two pins"
   (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
         state2 (state/add-wire state1 2 4)
         state3 (state/add-wire state2 2 6)]
@@ -45,7 +45,7 @@
     ((:wires state3) 1) => {:wire-id 1 :output-pin-id 2 :input-pin-id 6}))
 
 (fact
-  "state/add-wire should only accept an 'output' pin-id and an 'input' pin-id respectively"
+  "add-wire should only accept an 'output' pin-id and an 'input' pin-id respectively"
   (let [state (-> (state/initialize) state/add-gate state/add-gate)]
     (state/add-wire state 1 0) => (throws AssertionError)
     (state/add-wire state 8 0) => (throws AssertionError)
@@ -53,7 +53,7 @@
     (state/add-wire state 2 6) => (throws AssertionError)))
 
 (fact
-  "state/remove-gate should remove gate, pins and wires"
+  "remove-gate should remove gate, pins and wires"
   (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
         state2 (-> state1 (state/add-wire 2 4) (state/add-wire 2 6))
         state3 (state/remove-gate state2 1)]
@@ -67,21 +67,21 @@
     ((:pins state3) 6) => {:pin-id 6 :gate-id 2 :wire-ids #{1}}))
 
 (fact
-  "state/remove-gate should be able to remove gate for which output is wired to own input"
+  "remove-gate should be able to remove gate for which output is wired to own input"
   (let [state (-> (state/initialize) state/add-gate (state/add-wire 2 0) (state/remove-gate 0))]
     (:gates state) => empty?))
 
 (fact
-  "state/remove-gate should be able to remove unwired gate"
+  "remove-gate should be able to remove unwired gate"
   (let [state (-> (state/initialize) state/add-gate (state/remove-gate 0))]
     (:gates state) => empty?))
 
 (fact
-  "state/remove-gate may only be called for an existing gate"
+  "remove-gate may only be called for an existing gate"
   (-> (state/initialize) state/add-gate (state/remove-gate 1)) => (throws AssertionError))
 
 (fact
-  "state/remove-wire should remove wire"
+  "remove-wire should remove wire"
   (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
         state2 (-> state1 (state/add-wire 2 4) (state/add-wire 2 3) (state/add-wire 2 6))
         state3 (state/remove-wire state2 0)]
@@ -92,11 +92,11 @@
     (keys ((:pins state3) 4)) =not=> (contains :wire-ids)))
 
 (fact
-  "state/remove-wire may only be called for an existing wire"
+  "remove-wire may only be called for an existing wire"
   (-> (state/initialize) (state/remove-wire 0)) => (throws AssertionError))
 
 (fact
-  "state/remove-wires should remove wires"
+  "remove-wires should remove wires"
   (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
         state2 (-> state1 (state/add-wire 2 4) (state/add-wire 2 3) (state/add-wire 2 6))
         state3 (state/remove-wires state2 [0 2])]
@@ -108,13 +108,19 @@
     (keys ((:pins state3) 6)) =not=> (contains :wire-ids)))
 
 (fact
-  "state/remove-wires should do nothing if given wire-ids collection is empty"
+  "remove-wires should do nothing if given wire-ids collection is empty"
   (let [state1 (-> (state/initialize) state/add-gate (state/add-wire 2 0))
         state2 (state/remove-wires state1 [])]
     state2 => state1))
 
 (fact
-  "state/get-val and state/set-val should get/set value from/to gate inputs/output"
+  "remove-wires may only be called for existing and distinct wires"
+  (let [state (-> (state/initialize) state/add-gate (state/add-wire 2 0))]
+    (state/remove-wires state [0 1]) => (throws AssertionError)
+    (state/remove-wires state [0 0]) => (throws AssertionError)))
+
+(fact
+  "get-val and set-val should get/set value from/to gate inputs/output"
   (let [state1 (-> (state/initialize) state/add-gate state/add-gate (state/add-wire 2 3))
         state2 (-> state1 (state/set-val 0 1))
         state3 (-> state2 (state/set-val 0 0))
@@ -125,15 +131,15 @@
     (get-vals state4) => [0 1 1 0 1 0]))
 
 (fact
-  "state/get-val may only be called for an existing pin"
+  "get-val may only be called for an existing pin"
   (-> (state/initialize) state/add-gate (state/get-val 3)) => (throws AssertionError))
 
 (fact
-  "state/set-val may only be called for an existing pin"
+  "set-val may only be called for an existing pin"
   (-> (state/initialize) state/add-gate (state/set-val 3 1)) => (throws AssertionError))
 
 (fact
-  "state/set-val may only be called for a valid value"
+  "set-val may only be called for a valid value"
   (let [state (-> (state/initialize) state/add-gate)]
     (state/set-val state 0 -1) => (throws AssertionError)
     (state/set-val state 0 0) =not=> (throws AssertionError)
