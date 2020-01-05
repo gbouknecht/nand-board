@@ -2,7 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [nand-board.logic.state-spec :as state-spec]))
 
-(defn initialize []
+(defn make-initial-state []
   {:post [(s/valid? ::state-spec/state %)]}
   {:gates {} :pins {} :wires {} :next-gate-id 0 :next-pin-id 0 :next-wire-id 0})
 

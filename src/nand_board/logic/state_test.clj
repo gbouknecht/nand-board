@@ -1,18 +1,25 @@
 (ns nand-board.logic.state-test
   (:require [midje.sweet :refer [=> =not=> contains fact throws]]
-            [nand-board.logic.state :as state]))
+            [nand-board.logic.state :refer [add-gate
+                                            add-wire
+                                            make-initial-state
+                                            remove-gate
+                                            remove-wire
+                                            remove-wires
+                                            get-val
+                                            set-val]]))
 
 (fact
-  "initialize should give a state with no gates, pins and wires"
-  (let [state (state/initialize)]
+  "make-initial-state should give a state with no gates, pins and wires"
+  (let [state (make-initial-state)]
     (:gates state) => empty?
     (:pins state) => empty?
     (:wires state) => empty?))
 
 (fact
   "add-gate should add a new gate and pins, no wires"
-  (let [state1 (state/add-gate (state/initialize))
-        state2 (state/add-gate state1)]
+  (let [state1 (add-gate (make-initial-state))
+        state2 (add-gate state1)]
     ((:gates state1) 0) => {:gate-id 0 :inputs [{:pin-id 0 :val 0} {:pin-id 1 :val 0}] :output {:pin-id 2 :val 0}}
     (:pins state1) => {0 {:pin-id 0 :gate-id 0}
                        1 {:pin-id 1 :gate-id 0}
@@ -29,9 +36,9 @@
 
 (fact
   "add-wire should add a wire between two pins"
-  (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
-        state2 (state/add-wire state1 2 4)
-        state3 (state/add-wire state2 2 6)]
+  (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
+        state2 (add-wire state1 2 4)
+        state3 (add-wire state2 2 6)]
     (:gates state2) => (:gates state1)
     (dissoc (:pins state2) 2 4) => (dissoc (:pins state1) 2 4)
     ((:pins state2) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{0}}
@@ -46,17 +53,17 @@
 
 (fact
   "add-wire should only accept an 'output' pin-id and an 'input' pin-id respectively"
-  (let [state (-> (state/initialize) state/add-gate state/add-gate)]
-    (state/add-wire state 1 0) => (throws AssertionError)
-    (state/add-wire state 8 0) => (throws AssertionError)
-    (state/add-wire state 2 5) => (throws AssertionError)
-    (state/add-wire state 2 6) => (throws AssertionError)))
+  (let [state (-> (make-initial-state) add-gate add-gate)]
+    (add-wire state 1 0) => (throws AssertionError)
+    (add-wire state 8 0) => (throws AssertionError)
+    (add-wire state 2 5) => (throws AssertionError)
+    (add-wire state 2 6) => (throws AssertionError)))
 
 (fact
   "remove-gate should remove gate, pins and wires"
-  (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
-        state2 (-> state1 (state/add-wire 2 4) (state/add-wire 2 6))
-        state3 (state/remove-gate state2 1)]
+  (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
+        state2 (-> state1 (add-wire 2 4) (add-wire 2 6))
+        state3 (remove-gate state2 1)]
     (dissoc (:gates state3) 1) => (dissoc (:gates state1) 1)
     (dissoc (:pins state3) 2 3 4 5) => (dissoc (:pins state2) 2 3 4 5)
     (dissoc (:wires state3) 0) => (dissoc (:wires state2) 0)
@@ -68,23 +75,23 @@
 
 (fact
   "remove-gate should be able to remove gate for which output is wired to own input"
-  (let [state (-> (state/initialize) state/add-gate (state/add-wire 2 0) (state/remove-gate 0))]
+  (let [state (-> (make-initial-state) add-gate (add-wire 2 0) (remove-gate 0))]
     (:gates state) => empty?))
 
 (fact
   "remove-gate should be able to remove unwired gate"
-  (let [state (-> (state/initialize) state/add-gate (state/remove-gate 0))]
+  (let [state (-> (make-initial-state) add-gate (remove-gate 0))]
     (:gates state) => empty?))
 
 (fact
   "remove-gate may only be called for an existing gate"
-  (-> (state/initialize) state/add-gate (state/remove-gate 1)) => (throws AssertionError))
+  (-> (make-initial-state) add-gate (remove-gate 1)) => (throws AssertionError))
 
 (fact
   "remove-wire should remove wire"
-  (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
-        state2 (-> state1 (state/add-wire 2 4) (state/add-wire 2 3) (state/add-wire 2 6))
-        state3 (state/remove-wire state2 0)]
+  (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
+        state2 (-> state1 (add-wire 2 4) (add-wire 2 3) (add-wire 2 6))
+        state3 (remove-wire state2 0)]
     (:gates state3) => (:gates state1)
     (dissoc (:pins state3) 2 4) => (dissoc (:pins state2) 2 4)
     (set (keys (:wires state3))) => #{1 2}
@@ -93,13 +100,13 @@
 
 (fact
   "remove-wire may only be called for an existing wire"
-  (-> (state/initialize) (state/remove-wire 0)) => (throws AssertionError))
+  (-> (make-initial-state) (remove-wire 0)) => (throws AssertionError))
 
 (fact
   "remove-wires should remove wires"
-  (let [state1 (-> (state/initialize) state/add-gate state/add-gate state/add-gate)
-        state2 (-> state1 (state/add-wire 2 4) (state/add-wire 2 3) (state/add-wire 2 6))
-        state3 (state/remove-wires state2 [0 2])]
+  (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
+        state2 (-> state1 (add-wire 2 4) (add-wire 2 3) (add-wire 2 6))
+        state3 (remove-wires state2 [0 2])]
     (:gates state3) => (:gates state1)
     (dissoc (:pins state3) 2 4 6) => (dissoc (:pins state2) 2 4 6)
     (set (keys (:wires state3))) => #{1}
@@ -109,39 +116,39 @@
 
 (fact
   "remove-wires should do nothing if given wire-ids collection is empty"
-  (let [state1 (-> (state/initialize) state/add-gate (state/add-wire 2 0))
-        state2 (state/remove-wires state1 [])]
+  (let [state1 (-> (make-initial-state) add-gate (add-wire 2 0))
+        state2 (remove-wires state1 [])]
     state2 => state1))
 
 (fact
   "remove-wires may only be called for existing and distinct wires"
-  (let [state (-> (state/initialize) state/add-gate (state/add-wire 2 0))]
-    (state/remove-wires state [0 1]) => (throws AssertionError)
-    (state/remove-wires state [0 0]) => (throws AssertionError)))
+  (let [state (-> (make-initial-state) add-gate (add-wire 2 0))]
+    (remove-wires state [0 1]) => (throws AssertionError)
+    (remove-wires state [0 0]) => (throws AssertionError)))
 
 (fact
   "get-val and set-val should get/set value from/to gate inputs/output"
-  (let [state1 (-> (state/initialize) state/add-gate state/add-gate (state/add-wire 2 3))
-        state2 (-> state1 (state/set-val 0 1))
-        state3 (-> state2 (state/set-val 0 0))
-        state4 (-> state3 (state/set-val 1 1) (state/set-val 2 1) (state/set-val 4 1))
-        get-vals (fn [state] (map #(state/get-val state %) (range 0 6)))]
+  (let [state1 (-> (make-initial-state) add-gate add-gate (add-wire 2 3))
+        state2 (-> state1 (set-val 0 1))
+        state3 (-> state2 (set-val 0 0))
+        state4 (-> state3 (set-val 1 1) (set-val 2 1) (set-val 4 1))
+        get-vals (fn [state] (map #(get-val state %) (range 0 6)))]
     (get-vals state2) => [1 0 0 0 0 0]
     (get-vals state3) => [0 0 0 0 0 0]
     (get-vals state4) => [0 1 1 0 1 0]))
 
 (fact
   "get-val may only be called for an existing pin"
-  (-> (state/initialize) state/add-gate (state/get-val 3)) => (throws AssertionError))
+  (-> (make-initial-state) add-gate (get-val 3)) => (throws AssertionError))
 
 (fact
   "set-val may only be called for an existing pin"
-  (-> (state/initialize) state/add-gate (state/set-val 3 1)) => (throws AssertionError))
+  (-> (make-initial-state) add-gate (set-val 3 1)) => (throws AssertionError))
 
 (fact
   "set-val may only be called for a valid value"
-  (let [state (-> (state/initialize) state/add-gate)]
-    (state/set-val state 0 -1) => (throws AssertionError)
-    (state/set-val state 0 0) =not=> (throws AssertionError)
-    (state/set-val state 0 1) =not=> (throws AssertionError)
-    (state/set-val state 0 2) => (throws AssertionError)))
+  (let [state (-> (make-initial-state) add-gate)]
+    (set-val state 0 -1) => (throws AssertionError)
+    (set-val state 0 0) =not=> (throws AssertionError)
+    (set-val state 0 1) =not=> (throws AssertionError)
+    (set-val state 0 2) => (throws AssertionError)))
