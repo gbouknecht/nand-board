@@ -11,15 +11,15 @@
 
 (fact
   "make-initial-state should give a state with no gates, pins and wires"
-  (let [state (make-initial-state)]
+  (let [state (-> (make-initial-state))]
     (:gates state) => empty?
     (:pins state) => empty?
     (:wires state) => empty?))
 
 (fact
   "add-gate should add a new gate and pins, no wires"
-  (let [state1 (add-gate (make-initial-state))
-        state2 (add-gate state1)]
+  (let [state1 (-> (make-initial-state) add-gate)
+        state2 (-> state1 add-gate)]
     ((:gates state1) 0) => {:gate-id 0 :inputs [{:pin-id 0 :val 0} {:pin-id 1 :val 0}] :output {:pin-id 2 :val 0}}
     (:pins state1) => {0 {:pin-id 0 :gate-id 0}
                        1 {:pin-id 1 :gate-id 0}
@@ -37,8 +37,8 @@
 (fact
   "add-wire should add a wire between two pins"
   (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
-        state2 (add-wire state1 2 4)
-        state3 (add-wire state2 2 6)]
+        state2 (-> state1 (add-wire 2 4))
+        state3 (-> state2 (add-wire 2 6))]
     (:gates state2) => (:gates state1)
     (dissoc (:pins state2) 2 4) => (dissoc (:pins state1) 2 4)
     ((:pins state2) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{0}}
@@ -63,7 +63,7 @@
   "remove-gate should remove gate, pins and wires"
   (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
         state2 (-> state1 (add-wire 2 4) (add-wire 2 6))
-        state3 (remove-gate state2 1)]
+        state3 (-> state2 (remove-gate 1))]
     (dissoc (:gates state3) 1) => (dissoc (:gates state1) 1)
     (dissoc (:pins state3) 2 3 4 5) => (dissoc (:pins state2) 2 3 4 5)
     (dissoc (:wires state3) 0) => (dissoc (:wires state2) 0)
@@ -91,7 +91,7 @@
   "remove-wire should remove wire"
   (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
         state2 (-> state1 (add-wire 2 4) (add-wire 2 3) (add-wire 2 6))
-        state3 (remove-wire state2 0)]
+        state3 (-> state2 (remove-wire 0))]
     (:gates state3) => (:gates state1)
     (dissoc (:pins state3) 2 4) => (dissoc (:pins state2) 2 4)
     (set (keys (:wires state3))) => #{1 2}
@@ -106,7 +106,7 @@
   "remove-wires should remove wires"
   (let [state1 (-> (make-initial-state) add-gate add-gate add-gate)
         state2 (-> state1 (add-wire 2 4) (add-wire 2 3) (add-wire 2 6))
-        state3 (remove-wires state2 [0 2])]
+        state3 (-> state2 (remove-wires [0 2]))]
     (:gates state3) => (:gates state1)
     (dissoc (:pins state3) 2 4 6) => (dissoc (:pins state2) 2 4 6)
     (set (keys (:wires state3))) => #{1}
@@ -117,7 +117,7 @@
 (fact
   "remove-wires should do nothing if given wire-ids collection is empty"
   (let [state1 (-> (make-initial-state) add-gate (add-wire 2 0))
-        state2 (remove-wires state1 [])]
+        state2 (-> state1 (remove-wires []))]
     state2 => state1))
 
 (fact
