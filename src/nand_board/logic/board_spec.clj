@@ -1,4 +1,4 @@
-(ns nand-board.logic.state-spec
+(ns nand-board.logic.board-spec
   (:require [clojure.set :as set]
             [clojure.spec.alpha :as s]))
 
@@ -22,23 +22,23 @@
 (defn- intersection [coll1 coll2]
   (set/intersection (set coll1) (set coll2)))
 
-(defn- gates-gate-pin-id-pairs [state]
-  (flatten-pairs (:gates state) key #(tree-seq-map-get (val %) :pin-id)))
+(defn- gates-gate-pin-id-pairs [board]
+  (flatten-pairs (:gates board) key #(tree-seq-map-get (val %) :pin-id)))
 
-(defn- pins-gate-pin-id-pairs [state]
-  (flatten-pairs (:pins state) #(:gate-id (val %)) key))
+(defn- pins-gate-pin-id-pairs [board]
+  (flatten-pairs (:pins board) #(:gate-id (val %)) key))
 
-(defn- pins-pin-wire-id-pairs [state]
-  (flatten-pairs (:pins state) key #(:wire-ids (val %))))
+(defn- pins-pin-wire-id-pairs [board]
+  (flatten-pairs (:pins board) key #(:wire-ids (val %))))
 
-(defn- wires-pin-wire-id-pairs [state]
-  (flatten-pairs (:wires state) #((juxt :output-pin-id :input-pin-id) (val %)) key))
+(defn- wires-pin-wire-id-pairs [board]
+  (flatten-pairs (:wires board) #((juxt :output-pin-id :input-pin-id) (val %)) key))
 
-(defn- gates-pin-ids [state parent-key]
-  (-> (:gates state) (tree-seq-map-get parent-key) (tree-seq-map-get :pin-id)))
+(defn- gates-pin-ids [board parent-key]
+  (-> (:gates board) (tree-seq-map-get parent-key) (tree-seq-map-get :pin-id)))
 
-(defn- wires-vals [state key]
-  (tree-seq-map-get (:wires state) key))
+(defn- wires-vals [board key]
+  (tree-seq-map-get (:wires board) key))
 
 (s/def ::id (s/and int? (s/nonconforming (s/or :zero zero? :positive pos?))))
 (s/def ::pin-id ::id)
@@ -62,7 +62,7 @@
                      #(distinct? (:output-pin-id %) (:input-pin-id %))))
 (s/def ::wires (s/and (s/map-of ::wire-id ::wire)
                       #(same-key-id-pairs % :wire-id)))
-(s/def ::state (s/and (s/keys :req-un [::gates ::pins ::wires])
+(s/def ::board (s/and (s/keys :req-un [::gates ::pins ::wires])
                       #(= (gates-gate-pin-id-pairs %) (pins-gate-pin-id-pairs %))
                       #(= (pins-pin-wire-id-pairs %) (wires-pin-wire-id-pairs %))
                       #(empty-or-distinct? (wires-vals % :input-pin-id))
