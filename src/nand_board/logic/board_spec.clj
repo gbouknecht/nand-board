@@ -42,8 +42,7 @@
 
 (s/def ::id (s/and int? (s/nonconforming (s/or :zero zero? :positive pos?))))
 (s/def ::pin-id ::id)
-(s/def ::val #{0 1})
-(s/def ::input-or-output (s/keys :req-un [::pin-id ::val]))
+(s/def ::input-or-output (s/keys :req-un [::pin-id]))
 (s/def ::inputs (s/coll-of ::input-or-output :kind vector? :count 2))
 (s/def ::output ::input-or-output)
 (s/def ::gate-id ::id)

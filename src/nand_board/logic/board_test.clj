@@ -5,9 +5,7 @@
                                             make-initial-board
                                             remove-gate
                                             remove-wire
-                                            remove-wires
-                                            get-val
-                                            set-val]]))
+                                            remove-wires]]))
 
 (fact
   "make-initial-board should give a board with no gates, pins and wires"
@@ -20,14 +18,14 @@
   "add-gate should add a new gate and pins, no wires"
   (let [board1 (-> (make-initial-board) add-gate)
         board2 (-> board1 add-gate)]
-    ((:gates board1) 0) => {:gate-id 0 :inputs [{:pin-id 0 :val 0} {:pin-id 1 :val 0}] :output {:pin-id 2 :val 0}}
+    ((:gates board1) 0) => {:gate-id 0 :inputs [{:pin-id 0} {:pin-id 1}] :output {:pin-id 2}}
     (:pins board1) => {0 {:pin-id 0 :gate-id 0}
                        1 {:pin-id 1 :gate-id 0}
                        2 {:pin-id 2 :gate-id 0}}
     (:wires board1) => empty?
 
     ((:gates board2) 0) => ((:gates board1) 0)
-    ((:gates board2) 1) => {:gate-id 1 :inputs [{:pin-id 3 :val 0} {:pin-id 4 :val 0}] :output {:pin-id 5 :val 0}}
+    ((:gates board2) 1) => {:gate-id 1 :inputs [{:pin-id 3} {:pin-id 4}] :output {:pin-id 5}}
     (:pins board2) => (merge (:pins board1)
                              {3 {:pin-id 3 :gate-id 1}
                               4 {:pin-id 4 :gate-id 1}
@@ -125,30 +123,3 @@
   (let [board (-> (make-initial-board) add-gate (add-wire 2 0))]
     (remove-wires board [0 1]) => (throws AssertionError)
     (remove-wires board [0 0]) => (throws AssertionError)))
-
-(fact
-  "get-val and set-val should get/set value from/to gate inputs/output"
-  (let [board1 (-> (make-initial-board) add-gate add-gate (add-wire 2 3))
-        board2 (-> board1 (set-val 0 1))
-        board3 (-> board2 (set-val 0 0))
-        board4 (-> board3 (set-val 1 1) (set-val 2 1) (set-val 4 1))
-        get-vals (fn [board] (map #(get-val board %) (range 0 6)))]
-    (get-vals board2) => [1 0 0 0 0 0]
-    (get-vals board3) => [0 0 0 0 0 0]
-    (get-vals board4) => [0 1 1 0 1 0]))
-
-(fact
-  "get-val may only be called for an existing pin"
-  (-> (make-initial-board) add-gate (get-val 3)) => (throws AssertionError))
-
-(fact
-  "set-val may only be called for an existing pin"
-  (-> (make-initial-board) add-gate (set-val 3 1)) => (throws AssertionError))
-
-(fact
-  "set-val may only be called for a valid value"
-  (let [board (-> (make-initial-board) add-gate)]
-    (set-val board 0 -1) => (throws AssertionError)
-    (set-val board 0 0) =not=> (throws AssertionError)
-    (set-val board 0 1) =not=> (throws AssertionError)
-    (set-val board 0 2) => (throws AssertionError)))

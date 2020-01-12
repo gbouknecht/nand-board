@@ -8,8 +8,8 @@
 
 (defn- make-gate [gate-id [pin-id-0 pin-id-1 pin-id-2]]
   {:gate-id gate-id
-   :inputs  [{:pin-id pin-id-0 :val 0} {:pin-id pin-id-1 :val 0}]
-   :output  {:pin-id pin-id-2 :val 0}})
+   :inputs  [{:pin-id pin-id-0} {:pin-id pin-id-1}]
+   :output  {:pin-id pin-id-2}})
 
 (defn- make-pins [gate-id pin-ids]
   (apply merge (map (fn [pin-id] {pin-id {:pin-id pin-id :gate-id gate-id}}) pin-ids)))
@@ -93,25 +93,3 @@
         (remove-wires wire-ids)
         (update :gates dissoc gate-id)
         (update :pins #(apply dissoc % pin-ids)))))
-
-(defn get-val [board pin-id]
-  {:pre  [(s/valid? ::board-spec/board board)
-          (contains? (:pins board) pin-id)]
-   :post [(s/valid? ::board-spec/val %)]}
-  (let [gate (gate-for-pin-id board pin-id)
-        get-val #(if (= (:pin-id %) pin-id) (:val %))]
-    (some get-val (conj (:inputs gate) (:output gate)))))
-
-(defn set-val [board pin-id val]
-  {:pre  [(s/valid? ::board-spec/board board)
-          (contains? (:pins board) pin-id)
-          (s/valid? ::board-spec/val val)]
-   :post [(s/valid? ::board-spec/board %)]}
-  (let [gate-id (get-in board [:pins pin-id :gate-id])
-        set-val #(if (= (:pin-id %) pin-id) (assoc % :val val) %)
-        set-vals (comp vec (partial map set-val))]
-    (update-in board [:gates gate-id]
-               (fn [gate]
-                 (-> gate
-                     (update :output set-val)
-                     (update :inputs set-vals))))))

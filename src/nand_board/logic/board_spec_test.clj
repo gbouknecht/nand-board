@@ -12,17 +12,12 @@
   (s/valid? ::board-spec/id 2) => true
   (s/valid? ::board-spec/id "2") => false
 
-  (s/valid? ::board-spec/val -1) => false
-  (s/valid? ::board-spec/val 0) => true
-  (s/valid? ::board-spec/val 1) => true
-  (s/valid? ::board-spec/val 2) => false
-
   (s/valid? ::board-spec/inputs []) => false
-  (s/valid? ::board-spec/inputs [{:pin-id 11 :val 0}]) => false
-  (s/valid? ::board-spec/inputs [{:pin-id 11 :val 0} {:pin-id 13 :val 0}]) => true
-  (s/valid? ::board-spec/inputs [{:pin-id 11 :val 0} {:pin-id 13 :val 1} {:pin-id 15 :val 0}]) => false
+  (s/valid? ::board-spec/inputs [{:pin-id 11}]) => false
+  (s/valid? ::board-spec/inputs [{:pin-id 11} {:pin-id 13}]) => true
+  (s/valid? ::board-spec/inputs [{:pin-id 11} {:pin-id 13} {:pin-id 15}]) => false
 
-  (let [gate {:gate-id 0 :inputs [{:pin-id 11 :val 0} {:pin-id 13 :val 1}] :output {:pin-id 15 :val 1}}]
+  (let [gate {:gate-id 0 :inputs [{:pin-id 11} {:pin-id 13}] :output {:pin-id 15}}]
     (s/valid? ::board-spec/gate gate) => true
     (s/valid? ::board-spec/gate (assoc-in gate [:inputs 1 :pin-id] 11)) => false
     (s/valid? ::board-spec/gate (assoc-in gate [:output :pin-id] 11)) => false
@@ -53,9 +48,9 @@
       (s/valid? ::board-spec/wires (assoc-in wires [0 :wire-id] 1)) => false
       (s/valid? ::board-spec/wires (assoc-in wires [0 :wire-id] 2)) => false))
 
-  (let [board {:gates {0 {:gate-id 0 :inputs [{:pin-id 0 :val 0} {:pin-id 1 :val 0}] :output {:pin-id 2 :val 1}}
-                       1 {:gate-id 1 :inputs [{:pin-id 3 :val 0} {:pin-id 4 :val 1}] :output {:pin-id 5 :val 1}}
-                       2 {:gate-id 2 :inputs [{:pin-id 6 :val 1} {:pin-id 7 :val 1}] :output {:pin-id 8 :val 0}}}
+  (let [board {:gates {0 {:gate-id 0 :inputs [{:pin-id 0} {:pin-id 1}] :output {:pin-id 2}}
+                       1 {:gate-id 1 :inputs [{:pin-id 3} {:pin-id 4}] :output {:pin-id 5}}
+                       2 {:gate-id 2 :inputs [{:pin-id 6} {:pin-id 7}] :output {:pin-id 8}}}
                :pins  {0 {:pin-id 0 :gate-id 0}
                        1 {:pin-id 1 :gate-id 0}
                        2 {:pin-id 2 :gate-id 0 :wire-ids #{0 1}}
