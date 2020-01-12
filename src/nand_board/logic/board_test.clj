@@ -18,14 +18,14 @@
   "add-gate should add a new gate and pins, no wires"
   (let [board1 (-> (make-initial-board) add-gate)
         board2 (-> board1 add-gate)]
-    ((:gates board1) 0) => {:gate-id 0 :inputs [{:pin-id 0} {:pin-id 1}] :output {:pin-id 2}}
+    ((:gates board1) 0) => {:gate-id 0 :input-pin-ids #{0 1} :output-pin-id 2}
     (:pins board1) => {0 {:pin-id 0 :gate-id 0}
                        1 {:pin-id 1 :gate-id 0}
                        2 {:pin-id 2 :gate-id 0}}
     (:wires board1) => empty?
 
     ((:gates board2) 0) => ((:gates board1) 0)
-    ((:gates board2) 1) => {:gate-id 1 :inputs [{:pin-id 3} {:pin-id 4}] :output {:pin-id 5}}
+    ((:gates board2) 1) => {:gate-id 1 :input-pin-ids #{3 4} :output-pin-id 5}
     (:pins board2) => (merge (:pins board1)
                              {3 {:pin-id 3 :gate-id 1}
                               4 {:pin-id 4 :gate-id 1}
