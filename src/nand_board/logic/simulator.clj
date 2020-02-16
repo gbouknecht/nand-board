@@ -45,7 +45,7 @@
         (propagate pin-id))))
 
 (defn- process-events [state]
-  (let [current-events (filter (fn [event] (= (:time event) (:time state))) (:event-queue state))]
+  (let [current-events (take-while (fn [event] (= (:time event) (:time state))) (:event-queue state))]
     (reduce apply-event state current-events)))
 
 (defn make-initial-state [board]

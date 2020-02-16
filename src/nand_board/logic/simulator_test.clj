@@ -78,6 +78,14 @@
     (:vals state5) => {0 1, 1 1, 2 0}))
 
 (fact
+  "changes to input pins while a propagation is already in process should propagate correctly"
+  (let [board (-> (make-initial-board) add-gate)
+        vals-over-time (-> (make-initial-state board) tick (set-val 0 1) (set-val 1 1) vals-over-time)]
+    (take 3 vals-over-time) => [{0 1, 1 1}
+                                {0 1, 1 1, 2 1}
+                                {0 1, 1 1, 2 0}]))
+
+(fact
   "output pin can be wired to more than one input pin"
   (let [board (-> (make-initial-board) add-gate add-gate (add-wire 2 3) (add-wire 2 4))
         state5 (-> (make-initial-state board) (ticks 5))
