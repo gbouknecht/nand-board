@@ -16,10 +16,10 @@
 
 (defn- propagate-output [state gate]
   (let [output-pin-id (:output-pin-id gate)
-        wires (wires-for-pin-id (:board state) output-pin-id)
-        output-val (get-in state [:vals output-pin-id])
-        make-event (fn [pin-id] {:time (+ (:time state) wire-delay) :pin-id pin-id :val output-val})
-        events (map make-event (map :input-pin-id wires))]
+        wires         (wires-for-pin-id (:board state) output-pin-id)
+        output-val    (get-in state [:vals output-pin-id])
+        make-event    (fn [pin-id] {:time (+ (:time state) wire-delay) :pin-id pin-id :val output-val})
+        events        (map make-event (map :input-pin-id wires))]
     (update state :event-queue add-events events)))
 
 (defn- propagate-inputs [state gate]
@@ -37,29 +37,36 @@
       (propagate-inputs state gate))))
 
 (defn- apply-event [state event]
-  (let [pin-id (:pin-id event)
+  (let [state   (update state :event-queue disj event)
+        pin-id  (:pin-id event)
+        old-val (get-in state [:vals pin-id])
         new-val (:val event)]
-    (-> state
-        (assoc-in [:vals pin-id] new-val)
-        (update :event-queue disj event)
-        (propagate pin-id))))
+    (if (= old-val new-val)
+      state
+      (-> state
+          (assoc-in [:vals pin-id] new-val)
+          (propagate pin-id)))))
 
 (defn- process-events [state]
   (let [current-events (take-while (fn [event] (= (:time event) (:time state))) (:event-queue state))]
     (reduce apply-event state current-events)))
 
+(defn pending-events? [state]
+  {:pre [(s/valid? ::state-spec/state state)]}
+  (not (empty? (:event-queue state))))
+
 (defn make-initial-state [board]
   {:pre  [(s/valid? ::board-spec/board board)]
    :post [(s/valid? ::state-spec/state %)]}
-  (let [gates (vals (:gates board))
-        unwired? (fn [pin-id] (empty? (wires-for-pin-id board pin-id)))
-        make-event (fn [pin-id] {:time 0 :pin-id pin-id :val 0})
-        events (->> gates
-                    (mapcat :input-pin-ids)
-                    (filter unwired?)
-                    (map make-event))
+  (let [gates       (vals (:gates board))
+        unwired?    (fn [pin-id] (empty? (wires-for-pin-id board pin-id)))
+        make-event  (fn [pin-id] {:time 0 :pin-id pin-id :val 0})
+        events      (->> gates
+                         (mapcat :input-pin-ids)
+                         (filter unwired?)
+                         (map make-event))
         event-queue (-> (make-event-queue) (add-events events))
-        state {:time 0 :board board :vals {} :event-queue event-queue}]
+        state       {:time 0 :board board :vals {} :event-queue event-queue}]
     (-> state
         process-events)))
 
