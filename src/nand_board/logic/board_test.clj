@@ -43,18 +43,18 @@
     "should add a new gate and pins, no wires"
     (let [board1 (-> (make-initial-board) add-gate)
           board2 (-> board1 add-gate)]
-      ((:gates board1) 0) => {:gate-id 0 :input-pin-ids #{0 1} :output-pin-id 2}
-      (:pins board1) => {0 {:pin-id 0 :gate-id 0}
-                         1 {:pin-id 1 :gate-id 0}
-                         2 {:pin-id 2 :gate-id 0}}
+      ((:gates board1) 0) => {:id 0 :input-pin-ids #{0 1} :output-pin-id 2}
+      (:pins board1) => {0 {:id 0 :gate-id 0}
+                         1 {:id 1 :gate-id 0}
+                         2 {:id 2 :gate-id 0}}
       (:wires board1) => empty?
 
       ((:gates board2) 0) => ((:gates board1) 0)
-      ((:gates board2) 1) => {:gate-id 1 :input-pin-ids #{3 4} :output-pin-id 5}
+      ((:gates board2) 1) => {:id 1 :input-pin-ids #{3 4} :output-pin-id 5}
       (:pins board2) => (merge (:pins board1)
-                               {3 {:pin-id 3 :gate-id 1}
-                                4 {:pin-id 4 :gate-id 1}
-                                5 {:pin-id 5 :gate-id 1}})
+                               {3 {:id 3 :gate-id 1}
+                                4 {:id 4 :gate-id 1}
+                                5 {:id 5 :gate-id 1}})
       (:wires board2) => empty?)))
 
 (facts
@@ -67,15 +67,15 @@
           board3 (-> board2 (add-wire 2 6))]
       (:gates board2) => (:gates board1)
       (dissoc (:pins board2) 2 4) => (dissoc (:pins board1) 2 4)
-      ((:pins board2) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{0}}
-      ((:pins board2) 4) => {:pin-id 4 :gate-id 1 :wire-ids #{0}}
-      ((:wires board2) 0) => {:wire-id 0 :output-pin-id 2 :input-pin-id 4}
+      ((:pins board2) 2) => {:id 2 :gate-id 0 :wire-ids #{0}}
+      ((:pins board2) 4) => {:id 4 :gate-id 1 :wire-ids #{0}}
+      ((:wires board2) 0) => {:id 0 :output-pin-id 2 :input-pin-id 4}
 
       (:gates board3) => (:gates board1)
       (dissoc (:pins board3) 2 6) => (dissoc (:pins board2) 2 6)
-      ((:pins board3) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{0 1}}
-      ((:pins board3) 6) => {:pin-id 6 :gate-id 2 :wire-ids #{1}}
-      ((:wires board3) 1) => {:wire-id 1 :output-pin-id 2 :input-pin-id 6}))
+      ((:pins board3) 2) => {:id 2 :gate-id 0 :wire-ids #{0 1}}
+      ((:pins board3) 6) => {:id 6 :gate-id 2 :wire-ids #{1}}
+      ((:wires board3) 1) => {:id 1 :output-pin-id 2 :input-pin-id 6}))
 
   (fact
     "should only accept an 'output' pin-id and an 'input' pin-id respectively"
@@ -96,7 +96,7 @@
       (:gates board3) => (:gates board1)
       (dissoc (:pins board3) 2 4) => (dissoc (:pins board2) 2 4)
       (set (keys (:wires board3))) => #{1 2}
-      ((:pins board3) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{1 2}}
+      ((:pins board3) 2) => {:id 2 :gate-id 0 :wire-ids #{1 2}}
       (keys ((:pins board3) 4)) =not=> (contains :wire-ids)))
 
   (fact
@@ -114,7 +114,7 @@
       (:gates board3) => (:gates board1)
       (dissoc (:pins board3) 2 4 6) => (dissoc (:pins board2) 2 4 6)
       (set (keys (:wires board3))) => #{1}
-      ((:pins board3) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{1}}
+      ((:pins board3) 2) => {:id 2 :gate-id 0 :wire-ids #{1}}
       (keys ((:pins board3) 4)) =not=> (contains :wire-ids)
       (keys ((:pins board3) 6)) =not=> (contains :wire-ids)))
 
@@ -144,8 +144,8 @@
       (set (keys (:gates board3))) => #{0 2}
       (set (keys (:pins board3))) => #{0 1 2 6 7 8}
       (set (keys (:wires board3))) => #{1}
-      ((:pins board3) 2) => {:pin-id 2 :gate-id 0 :wire-ids #{1}}
-      ((:pins board3) 6) => {:pin-id 6 :gate-id 2 :wire-ids #{1}}))
+      ((:pins board3) 2) => {:id 2 :gate-id 0 :wire-ids #{1}}
+      ((:pins board3) 6) => {:id 6 :gate-id 2 :wire-ids #{1}}))
 
   (fact
     "should be able to remove gate for which output is wired to own input"
