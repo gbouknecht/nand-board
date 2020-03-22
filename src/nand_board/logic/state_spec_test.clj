@@ -1,7 +1,7 @@
 (ns nand-board.logic.state-spec-test
   (:require [clojure.spec.alpha :as s]
             [midje.sweet :refer [=> facts]]
-            [nand-board.logic.board :refer [add-gate make-initial-board]]
+            [nand-board.logic.board :refer [add-gates make-initial-board]]
             [nand-board.logic.state-spec :as state-spec]))
 
 (facts
@@ -19,7 +19,7 @@
   (s/valid? ::state-spec/val 1) => true
   (s/valid? ::state-spec/val 2) => false
 
-  (let [board (-> (make-initial-board) add-gate add-gate)
+  (let [board (-> (make-initial-board) (add-gates 2))
         state {:time 3
                :board board
                :vals {0 0, 2 1, 3 0, 4 0, 5 1}
