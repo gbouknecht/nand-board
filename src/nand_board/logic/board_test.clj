@@ -5,6 +5,7 @@
                                             gate-for-pin-id
                                             last-added-gates
                                             make-initial-board
+                                            pins-for-gates
                                             remove-gate
                                             remove-wire
                                             remove-wires
@@ -22,20 +23,25 @@
 
 (facts
   "retrieval"
-  (let [board (-> (make-initial-board)
-                  (add-gates 2)
-                  (add-wire 2 3) (add-wire 2 4) (add-wire 5 0))]
-    (gate-for-pin-id board 0) => ((:gates board) 0)
-    (gate-for-pin-id board 1) => ((:gates board) 0)
-    (gate-for-pin-id board 2) => ((:gates board) 0)
-    (gate-for-pin-id board 3) => ((:gates board) 1)
+  (let [board1 (-> (make-initial-board) (add-gates 2))
+        [g1 g2] (last-added-gates board1)
+        [i1 i2 o3 i4 i5 o6] (pins-for-gates board1 [g1 g2])
+        board2 (-> board1 (add-wire o3 i4) (add-wire o3 i5) (add-wire o6 i1))]
+    [g1 g2] => (map #(get-in board1 [:gates %]) (range 0 2))
+    [i1 i2 o3] => (map #(get-in board1 [:pins %]) (range 0 3))
+    [i4 i5 o6] => (map #(get-in board1 [:pins %]) (range 3 6))
 
-    (wires-for-pin-id board 0) => [((:wires board) 2)]
-    (wires-for-pin-id board 1) => empty?
-    (wires-for-pin-id board 2) => (just [((:wires board) 0) ((:wires board) 1)] :in-any-order)
-    (wires-for-pin-id board 3) => [((:wires board) 0)]
-    (wires-for-pin-id board 4) => [((:wires board) 1)]
-    (wires-for-pin-id board 5) => [((:wires board) 2)]))
+    (gate-for-pin-id board2 0) => ((:gates board2) 0)
+    (gate-for-pin-id board2 1) => ((:gates board2) 0)
+    (gate-for-pin-id board2 2) => ((:gates board2) 0)
+    (gate-for-pin-id board2 3) => ((:gates board2) 1)
+
+    (wires-for-pin-id board2 0) => [((:wires board2) 2)]
+    (wires-for-pin-id board2 1) => empty?
+    (wires-for-pin-id board2 2) => (just [((:wires board2) 0) ((:wires board2) 1)] :in-any-order)
+    (wires-for-pin-id board2 3) => [((:wires board2) 0)]
+    (wires-for-pin-id board2 4) => [((:wires board2) 1)]
+    (wires-for-pin-id board2 5) => [((:wires board2) 2)]))
 
 (facts
   "add-gates"
@@ -44,19 +50,19 @@
     "should add new gates and pins, no wires"
     (let [board1 (-> (make-initial-board) (add-gates 1))
           board2 (-> board1 (add-gates 2))
-          gate1  ((:gates board1) 0)
-          gate2  ((:gates board2) 1)
-          gate3  ((:gates board2) 2)]
-      gate1 => {:id 0 :input-pin-ids #{0 1} :output-pin-id 2}
+          g1 ((:gates board1) 0)
+          g2 ((:gates board2) 1)
+          g3 ((:gates board2) 2)]
+      g1 => {:id 0 :input-pin-ids #{0 1} :output-pin-id 2}
       (:pins board1) => {0 {:id 0 :gate-id 0}
                          1 {:id 1 :gate-id 0}
                          2 {:id 2 :gate-id 0}}
       (:wires board1) => empty?
-      (last-added-gates board1) => [gate1]
+      (last-added-gates board1) => [g1]
 
-      ((:gates board2) 0) => gate1
-      gate2 => {:id 1 :input-pin-ids #{3 4} :output-pin-id 5}
-      gate3 => {:id 2 :input-pin-ids #{6 7} :output-pin-id 8}
+      ((:gates board2) 0) => g1
+      g2 => {:id 1 :input-pin-ids #{3 4} :output-pin-id 5}
+      g3 => {:id 2 :input-pin-ids #{6 7} :output-pin-id 8}
       (:pins board2) => (merge (:pins board1)
                                {3 {:id 3 :gate-id 1}
                                 4 {:id 4 :gate-id 1}
@@ -65,7 +71,7 @@
                                 7 {:id 7 :gate-id 2}
                                 8 {:id 8 :gate-id 2}})
       (:wires board2) => empty?
-      (last-added-gates board2) => [gate2 gate3])))
+      (last-added-gates board2) => [g2 g3])))
 
 (facts
   "add-wire"
@@ -73,8 +79,9 @@
   (fact
     "should add a wire between two pins"
     (let [board1 (-> (make-initial-board) (add-gates 3))
-          board2 (-> board1 (add-wire 2 4))
-          board3 (-> board2 (add-wire 2 6))]
+          [_ _ o3 _ i5 _ i7 _ _] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wire o3 i5))
+          board3 (-> board2 (add-wire o3 i7))]
       (:gates board2) => (:gates board1)
       (dissoc (:pins board2) 2 4) => (dissoc (:pins board1) 2 4)
       ((:pins board2) 2) => {:id 2 :gate-id 0 :wire-ids #{0}}
@@ -88,12 +95,14 @@
       ((:wires board3) 1) => {:id 1 :output-pin-id 2 :input-pin-id 6}))
 
   (fact
-    "should only accept an 'output' pin-id and an 'input' pin-id respectively"
-    (let [board (-> (make-initial-board) (add-gates 2))]
-      (add-wire board 1 0) => (throws AssertionError)
-      (add-wire board 8 0) => (throws AssertionError)
-      (add-wire board 2 5) => (throws AssertionError)
-      (add-wire board 2 6) => (throws AssertionError))))
+    "should only accept an 'output' pin and an 'input' pin respectively"
+    (let [board (-> (make-initial-board) (add-gates 2))
+          [i1 i2 o3 _ _ o6] (pins-for-gates board (last-added-gates board))
+          [i7 _ o9] [{:id 6} {:id 7} {:id 8}]]
+      (add-wire board i2 i1) => (throws AssertionError)
+      (add-wire board o9 i1) => (throws AssertionError)
+      (add-wire board o3 o6) => (throws AssertionError)
+      (add-wire board o3 i7) => (throws AssertionError))))
 
 (facts
   "remove-wire"
@@ -101,7 +110,8 @@
   (fact
     "should remove wire"
     (let [board1 (-> (make-initial-board) (add-gates 3))
-          board2 (-> board1 (add-wire 2 4) (add-wire 2 3) (add-wire 2 6))
+          [_ _ o3 i4 i5 _ i7 _ _] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wire o3 i5) (add-wire o3 i4) (add-wire o3 i7))
           board3 (-> board2 (remove-wire 0))]
       (:gates board3) => (:gates board1)
       (dissoc (:pins board3) 2 4) => (dissoc (:pins board2) 2 4)
@@ -119,7 +129,8 @@
   (fact
     "should remove wires"
     (let [board1 (-> (make-initial-board) (add-gates 3))
-          board2 (-> board1 (add-wire 2 4) (add-wire 2 3) (add-wire 2 6))
+          [_ _ o3 i4 i5 _ i7 _ _] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wire o3 i5) (add-wire o3 i4) (add-wire o3 i7))
           board3 (-> board2 (remove-wires [0 2]))]
       (:gates board3) => (:gates board1)
       (dissoc (:pins board3) 2 4 6) => (dissoc (:pins board2) 2 4 6)
@@ -130,15 +141,19 @@
 
   (fact
     "should do nothing if given wire-ids collection is empty"
-    (let [board1 (-> (make-initial-board) (add-gates 1) (add-wire 2 0))
-          board2 (-> board1 (remove-wires []))]
-      board2 => board1))
+    (let [board1 (-> (make-initial-board) (add-gates 1))
+          [i1 _ o3] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wire o3 i1))
+          board3 (-> board2 (remove-wires []))]
+      board3 => board2))
 
   (fact
     "may only be called for existing and distinct wires"
-    (let [board (-> (make-initial-board) (add-gates 1) (add-wire 2 0))]
-      (remove-wires board [0 1]) => (throws AssertionError)
-      (remove-wires board [0 0]) => (throws AssertionError))))
+    (let [board1 (-> (make-initial-board) (add-gates 1))
+          [i1 _ o3] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wire o3 i1))]
+      (remove-wires board2 [0 1]) => (throws AssertionError)
+      (remove-wires board2 [0 0]) => (throws AssertionError))))
 
 (facts
   "remove-gate"
@@ -146,7 +161,8 @@
   (fact
     "should remove gate, pins and wires"
     (let [board1 (-> (make-initial-board) (add-gates 3))
-          board2 (-> board1 (add-wire 2 4) (add-wire 2 6))
+          [_ _ o3 _ i5 _ i7 _ _] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wire o3 i5) (add-wire o3 i7))
           board3 (-> board2 (remove-gate 1))]
       (dissoc (:gates board3) 1) => (dissoc (:gates board1) 1)
       (dissoc (:pins board3) 2 3 4 5) => (dissoc (:pins board2) 2 3 4 5)
@@ -159,8 +175,10 @@
 
   (fact
     "should be able to remove gate for which output is wired to own input"
-    (let [board (-> (make-initial-board) (add-gates 1) (add-wire 2 0) (remove-gate 0))]
-      (:gates board) => empty?))
+    (let [board1 (-> (make-initial-board) (add-gates 1))
+          [i1 _ o3] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wire o3 i1) (remove-gate 0))]
+      (:gates board2) => empty?))
 
   (fact
     "should be able to remove unwired gate"

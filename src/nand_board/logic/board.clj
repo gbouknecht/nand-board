@@ -15,7 +15,7 @@
 
 (defn- make-gate [id [pin-id-0 pin-id-1 pin-id-2]]
   {:id            id
-   :input-pin-ids #{pin-id-0 pin-id-1}
+   :input-pin-ids (sorted-set pin-id-0 pin-id-1)
    :output-pin-id pin-id-2})
 
 (defn- make-pins [ids gate-id]
@@ -35,6 +35,13 @@
    :post [(every? (partial valid? ::board-spec/gate) %)]}
   (:last-added-gates board))
 
+(defn pins-for-gates [board gates]
+  {:pre  [(valid? ::board-spec/board board)
+          (every? (partial valid? ::board-spec/gate) gates)]
+   :post [(every? (partial valid? ::board-spec/pin) %)]}
+  (let [pin-ids (mapcat #(conj (:input-pin-ids %) (:output-pin-id %)) gates)]
+    (map #(get-in board [:pins %]) pin-ids)))
+
 (defn wires-for-pin-id [board pin-id]
   {:pre  [(valid? ::board-spec/board board)]
    :post [(every? (partial valid? ::board-spec/wire) %)]}
@@ -42,12 +49,12 @@
     (map #(get-in board [:wires %]) wire-ids)))
 
 (defn- add-gate [board]
-  (let [gate-id      (:next-gate-id board)
+  (let [gate-id (:next-gate-id board)
         start-pin-id (:next-pin-id board)
-        end-pin-id   (+ start-pin-id 3)
-        pin-ids      (range start-pin-id end-pin-id)
-        gate         (make-gate gate-id pin-ids)
-        pins         (make-pins pin-ids gate-id)]
+        end-pin-id (+ start-pin-id 3)
+        pin-ids (range start-pin-id end-pin-id)
+        gate (make-gate gate-id pin-ids)
+        pins (make-pins pin-ids gate-id)]
     (-> board
         (assoc-in [:gates gate-id] gate)
         (update :pins merge pins)
@@ -61,16 +68,16 @@
   (let [board (assoc board :last-added-gates [])]
     (nth (iterate add-gate board) n)))
 
-(defn add-wire [board output-pin-id input-pin-id]
+(defn add-wire [board output-pin input-pin]
   {:pre  [(valid? ::board-spec/board board)
-          (= output-pin-id (:output-pin-id (gate-for-pin-id board output-pin-id)))
-          (some #{input-pin-id} (:input-pin-ids (gate-for-pin-id board input-pin-id)))]
+          (= (:id output-pin) (:output-pin-id (gate-for-pin-id board (:id output-pin))))
+          (some #{(:id input-pin)} (:input-pin-ids (gate-for-pin-id board (:id input-pin))))]
    :post [(valid? ::board-spec/board %)]}
   (let [wire-id (:next-wire-id board)
-        wire    (make-wire wire-id output-pin-id input-pin-id)]
+        wire (make-wire wire-id (:id output-pin) (:id input-pin))]
     (-> board
-        (update-in [:pins output-pin-id :wire-ids] (fnil conj #{}) wire-id)
-        (update-in [:pins input-pin-id :wire-ids] (fnil conj #{}) wire-id)
+        (update-in [:pins (:id output-pin) :wire-ids] (fnil conj #{}) wire-id)
+        (update-in [:pins (:id input-pin) :wire-ids] (fnil conj #{}) wire-id)
         (assoc-in [:wires wire-id] wire)
         (assoc :next-wire-id (inc wire-id)))))
 
@@ -89,7 +96,7 @@
   {:pre  [(valid? ::board-spec/board board)
           (contains? (:wires board) wire-id)]
    :post [(valid? ::board-spec/board %)]}
-  (let [wire    ((:wires board) wire-id)
+  (let [wire ((:wires board) wire-id)
         pin-ids ((juxt :output-pin-id :input-pin-id) wire)]
     (-> board
         (remove-wire-from-pins pin-ids wire-id)
@@ -105,9 +112,9 @@
   {:pre  [(valid? ::board-spec/board board)
           (contains? (:gates board) gate-id)]
    :post [(valid? ::board-spec/board %)]}
-  (let [gate     ((:gates board) gate-id)
-        pin-ids  (conj (:input-pin-ids gate) (:output-pin-id gate))
-        pins     (select-keys (:pins board) pin-ids)
+  (let [gate ((:gates board) gate-id)
+        pin-ids (conj (:input-pin-ids gate) (:output-pin-id gate))
+        pins (select-keys (:pins board) pin-ids)
         wire-ids (set (mapcat :wire-ids (vals pins)))]
     (-> board
         (remove-wires wire-ids)
