@@ -108,15 +108,14 @@
    :post [(valid? ::board-spec/board %)]}
   (reduce #(remove-wire %1 %2) board wire-ids))
 
-(defn remove-gate [board gate-id]
+(defn remove-gate [board gate]
   {:pre  [(valid? ::board-spec/board board)
-          (contains? (:gates board) gate-id)]
+          (contains? (:gates board) (:id gate))]
    :post [(valid? ::board-spec/board %)]}
-  (let [gate ((:gates board) gate-id)
-        pin-ids (conj (:input-pin-ids gate) (:output-pin-id gate))
+  (let [pin-ids (conj (:input-pin-ids gate) (:output-pin-id gate))
         pins (select-keys (:pins board) pin-ids)
         wire-ids (set (mapcat :wire-ids (vals pins)))]
     (-> board
         (remove-wires wire-ids)
-        (update :gates dissoc gate-id)
+        (update :gates dissoc (:id gate))
         (update :pins #(apply dissoc % pin-ids)))))

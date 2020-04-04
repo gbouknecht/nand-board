@@ -161,9 +161,10 @@
   (fact
     "should remove gate, pins and wires"
     (let [board1 (-> (make-initial-board) (add-gates 3))
-          [_ _ o3 _ i5 _ i7 _ _] (pins-for-gates board1 (last-added-gates board1))
+          [g1 g2 g3] (last-added-gates board1)
+          [_ _ o3 _ i5 _ i7 _ _] (pins-for-gates board1 [g1 g2 g3])
           board2 (-> board1 (add-wire o3 i5) (add-wire o3 i7))
-          board3 (-> board2 (remove-gate 1))]
+          board3 (-> board2 (remove-gate g2))]
       (dissoc (:gates board3) 1) => (dissoc (:gates board1) 1)
       (dissoc (:pins board3) 2 3 4 5) => (dissoc (:pins board2) 2 3 4 5)
       (dissoc (:wires board3) 0) => (dissoc (:wires board2) 0)
@@ -176,15 +177,20 @@
   (fact
     "should be able to remove gate for which output is wired to own input"
     (let [board1 (-> (make-initial-board) (add-gates 1))
-          [i1 _ o3] (pins-for-gates board1 (last-added-gates board1))
-          board2 (-> board1 (add-wire o3 i1) (remove-gate 0))]
+          [g1] (last-added-gates board1)
+          [i1 _ o3] (pins-for-gates board1 [g1])
+          board2 (-> board1 (add-wire o3 i1) (remove-gate g1))]
       (:gates board2) => empty?))
 
   (fact
     "should be able to remove unwired gate"
-    (let [board (-> (make-initial-board) (add-gates 1) (remove-gate 0))]
-      (:gates board) => empty?))
+    (let [board1 (-> (make-initial-board) (add-gates 1))
+          [g1] (last-added-gates board1)
+          board2 (-> board1 (remove-gate g1))]
+      (:gates board2) => empty?))
 
   (fact
     "may only be called for an existing gate"
-    (-> (make-initial-board) (add-gates 1) (remove-gate 1)) => (throws AssertionError)))
+    (let [board (-> (make-initial-board) (add-gates 1))
+          g2 {:id 1}]
+      (-> board (remove-gate g2))) => (throws AssertionError)))
