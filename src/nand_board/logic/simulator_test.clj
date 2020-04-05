@@ -1,7 +1,7 @@
 (ns nand-board.logic.simulator-test
   (:require [midje.sweet :refer [=> =not=> fact]]
             [nand-board.logic.board :refer [add-gates
-                                            add-wire
+                                            add-wires
                                             last-added-gates
                                             make-initial-board
                                             pins-for-gates]]
@@ -40,7 +40,7 @@
   "initial state should have only unwired input pins set to 0"
   (let [board1 (-> (make-initial-board) (add-gates 2))
         [_ _ o3 i4 _ _] (pins-for-gates board1 (last-added-gates board1))
-        board2 (-> board1 (add-wire o3 i4))
+        board2 (-> board1 (add-wires [o3 i4]))
         vals-over-time (-> (make-initial-state board2) vals-over-time)]
     (first vals-over-time) => {0 0, 1 0, 4 0}))
 
@@ -56,7 +56,7 @@
   "propagation delay through a wire should be 1"
   (let [board1 (-> (make-initial-board) (add-gates 2))
         [_ _ o3 i4 _ _] (pins-for-gates board1 (last-added-gates board1))
-        board2 (-> board1 (add-wire o3 i4))
+        board2 (-> board1 (add-wires [o3 i4]))
         vals-over-time (-> (make-initial-state board2) vals-over-time)]
     vals-over-time => [{0 0, 1 0, 4 0}
                        {0 0, 1 0, 4 0}
@@ -105,7 +105,7 @@
   "events on output pin should only propagate if it is a change"
   (let [board1 (-> (make-initial-board) (add-gates 2))
         [_ _ o3 i4 _ _] (pins-for-gates board1 (last-added-gates board1))
-        board2 (-> board1 (add-wire o3 i4))
+        board2 (-> board1 (add-wires [o3 i4]))
         state (-> (make-initial-state board2) ticks last)]
     (-> state (set-val 0 1) tick tick) =not=> pending-events?
     (-> state (set-val 0 1) (set-val 1 1) tick tick) => pending-events?))
@@ -114,7 +114,7 @@
   "output pin can be wired to more than one input pin"
   (let [board1 (-> (make-initial-board) (add-gates 2))
         [_ _ o3 i4 i5 _] (pins-for-gates board1 (last-added-gates board1))
-        board2 (-> board1 (add-wire o3 i4) (add-wire o3 i5))
+        board2 (-> board1 (add-wires [o3 i4] [o3 i5]))
         state1 (-> (make-initial-state board2) ticks last)
         state2 (-> state1 (set-val 0 1) (set-val 1 1) ticks last)]
     (:vals state1) => {0 0, 1 0, 2 1, 3 1, 4 1, 5 0}
