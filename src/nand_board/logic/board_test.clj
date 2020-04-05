@@ -8,7 +8,6 @@
                                             make-initial-board
                                             pins-for-gates
                                             remove-gate
-                                            remove-wire
                                             remove-wires
                                             wires-for-pin-id]]))
 
@@ -115,7 +114,8 @@
     (let [board1 (-> (make-initial-board) (add-gates 3))
           [_ _ o3 i4 i5 _ i7 _ _] (pins-for-gates board1 (last-added-gates board1))
           board2 (-> board1 (add-wires [o3 i5] [o3 i4] [o3 i7]))
-          board3 (-> board2 (remove-wire 0))]
+          [w1 _ _] (last-added-wires board2)
+          board3 (-> board2 (remove-wires [w1]))]
       (:gates board3) => (:gates board1)
       (dissoc (:pins board3) 2 4) => (dissoc (:pins board2) 2 4)
       (set (keys (:wires board3))) => #{1 2}
@@ -124,7 +124,7 @@
 
   (fact
     "remove-wire may only be called for an existing wire"
-    (-> (make-initial-board) (remove-wire 0)) => (throws AssertionError)))
+    (-> (make-initial-board) (remove-wires [{:id 0 :output-pin-id 2 :input-pin-id 0}])) => (throws AssertionError)))
 
 (facts
   "remove-wires"
@@ -134,7 +134,8 @@
     (let [board1 (-> (make-initial-board) (add-gates 3))
           [_ _ o3 i4 i5 _ i7 _ _] (pins-for-gates board1 (last-added-gates board1))
           board2 (-> board1 (add-wires [o3 i5] [o3 i4] [o3 i7]))
-          board3 (-> board2 (remove-wires [0 2]))]
+          [w1 _ w3] (last-added-wires board2)
+          board3 (-> board2 (remove-wires [w1 w3]))]
       (:gates board3) => (:gates board1)
       (dissoc (:pins board3) 2 4 6) => (dissoc (:pins board2) 2 4 6)
       (set (keys (:wires board3))) => #{1}
@@ -154,9 +155,11 @@
     "may only be called for existing and distinct wires"
     (let [board1 (-> (make-initial-board) (add-gates 1))
           [i1 _ o3] (pins-for-gates board1 (last-added-gates board1))
-          board2 (-> board1 (add-wires [o3 i1]))]
-      (remove-wires board2 [0 1]) => (throws AssertionError)
-      (remove-wires board2 [0 0]) => (throws AssertionError))))
+          board2 (-> board1 (add-wires [o3 i1]))
+          [w1] (last-added-wires board2)
+          w2 {:id 1 :output-pin-id 2 :input-pin-id 0}]
+      (remove-wires board2 [w1 w2]) => (throws AssertionError)
+      (remove-wires board2 [w1 w1]) => (throws AssertionError))))
 
 (facts
   "remove-gate"

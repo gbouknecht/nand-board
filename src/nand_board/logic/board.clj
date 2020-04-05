@@ -75,10 +75,8 @@
     (nth (iterate add-gate board) n)))
 
 (defn- add-wire [board output-pin input-pin]
-  {:pre  [(valid? ::board-spec/board board)
-          (= (:id output-pin) (:output-pin-id (gate-for-pin-id board (:id output-pin))))
-          (some #{(:id input-pin)} (:input-pin-ids (gate-for-pin-id board (:id input-pin))))]
-   :post [(valid? ::board-spec/board %)]}
+  {:pre [(= (:id output-pin) (:output-pin-id (gate-for-pin-id board (:id output-pin))))
+         (some #{(:id input-pin)} (:input-pin-ids (gate-for-pin-id board (:id input-pin))))]}
   (let [wire-id (:next-wire-id board)
         wire (make-wire wire-id (:id output-pin) (:id input-pin))]
     (-> board
@@ -96,41 +94,38 @@
         pin-pairs (concat [[output-pin-1 input-pin-1]] pin-pairs)]
     (reduce (partial apply add-wire) board pin-pairs)))
 
-(defn- remove-wire-from-pin [board pin-id wire-id]
+(defn- remove-wire-from-pin [board pin-id wire]
   (update-in board [:pins pin-id]
              (fn [pin]
-               (let [wire-ids (disj (:wire-ids pin) wire-id)]
+               (let [wire-ids (disj (:wire-ids pin) (:id wire))]
                  (if (empty? wire-ids)
                    (dissoc pin :wire-ids)
                    (assoc pin :wire-ids wire-ids))))))
 
-(defn- remove-wire-from-pins [board pin-ids wire-id]
-  (reduce #(remove-wire-from-pin %1 %2 wire-id) board pin-ids))
+(defn- remove-wire-from-pins [board wire]
+  (let [pin-ids ((juxt :output-pin-id :input-pin-id) wire)]
+    (reduce #(remove-wire-from-pin %1 %2 wire) board pin-ids)))
 
-(defn remove-wire [board wire-id]
-  {:pre  [(valid? ::board-spec/board board)
-          (contains? (:wires board) wire-id)]
-   :post [(valid? ::board-spec/board %)]}
-  (let [wire ((:wires board) wire-id)
-        pin-ids ((juxt :output-pin-id :input-pin-id) wire)]
-    (-> board
-        (remove-wire-from-pins pin-ids wire-id)
-        (update :wires dissoc wire-id))))
+(defn- remove-wire [board wire]
+  (-> board
+      (remove-wire-from-pins wire)
+      (update :wires dissoc (:id wire))))
 
-(defn remove-wires [board wire-ids]
+(defn remove-wires [board wires]
   {:pre  [(valid? ::board-spec/board board)
-          (or (empty? wire-ids) (apply distinct? wire-ids))]
+          (every? (partial valid? ::board-spec/wire) wires)
+          (every? (partial contains? (:wires board)) (map :id wires))
+          (or (empty? wires) (apply distinct? (map :id wires)))]
    :post [(valid? ::board-spec/board %)]}
-  (reduce #(remove-wire %1 %2) board wire-ids))
+  (reduce remove-wire board wires))
 
 (defn remove-gate [board gate]
   {:pre  [(valid? ::board-spec/board board)
           (contains? (:gates board) (:id gate))]
    :post [(valid? ::board-spec/board %)]}
-  (let [pin-ids (conj (:input-pin-ids gate) (:output-pin-id gate))
-        pins (select-keys (:pins board) pin-ids)
-        wire-ids (set (mapcat :wire-ids (vals pins)))]
+  (let [pins (pins-for-gates board [gate])
+        wires (set (mapcat #(wires-for-pin-id board (:id %)) pins))]
     (-> board
-        (remove-wires wire-ids)
+        (remove-wires wires)
         (update :gates dissoc (:id gate))
-        (update :pins #(apply dissoc % pin-ids)))))
+        (update :pins #(apply dissoc % (map :id pins))))))
