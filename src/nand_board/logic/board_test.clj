@@ -3,12 +3,19 @@
             [nand-board.logic.board :refer [add-gates
                                             add-wires
                                             gate-for-pin-id
+                                            input-pin-for-wire
+                                            input-pin?
+                                            input-pins-for-gate
                                             last-added-gates
                                             last-added-wires
                                             make-initial-board
+                                            output-pin-for-wire
+                                            output-pin?
+                                            output-pin-for-gate
                                             pins-for-gates
                                             remove-gate
                                             remove-wires
+                                            wires-for-pin
                                             wires-for-pin-id]]))
 
 (facts
@@ -38,12 +45,35 @@
     (gate-for-pin-id board2 2) => ((:gates board2) 0)
     (gate-for-pin-id board2 3) => ((:gates board2) 1)
 
+    (input-pins-for-gate board1 g1) => [i1 i2]
+    (input-pins-for-gate board1 g2) => [i4 i5]
+
+    (output-pin-for-gate board1 g1) => o3
+    (output-pin-for-gate board1 g2) => o6
+
+    (input-pin? board1 i1) => true
+    (input-pin? board1 i2) => true
+    (input-pin? board1 o3) => false
+    (output-pin? board1 i1) => false
+    (output-pin? board1 i2) => false
+    (output-pin? board1 o3) => true
+
+    (wires-for-pin board2 i1) => [((:wires board2) 2)]
+    (wires-for-pin board2 i2) => empty?
+    (wires-for-pin board2 o3) => (just [((:wires board2) 0) ((:wires board2) 1)] :in-any-order)
+    (wires-for-pin board2 i4) => [((:wires board2) 0)]
+    (wires-for-pin board2 i5) => [((:wires board2) 1)]
+    (wires-for-pin board2 o6) => [((:wires board2) 2)]
+
     (wires-for-pin-id board2 0) => [((:wires board2) 2)]
     (wires-for-pin-id board2 1) => empty?
     (wires-for-pin-id board2 2) => (just [((:wires board2) 0) ((:wires board2) 1)] :in-any-order)
     (wires-for-pin-id board2 3) => [((:wires board2) 0)]
     (wires-for-pin-id board2 4) => [((:wires board2) 1)]
-    (wires-for-pin-id board2 5) => [((:wires board2) 2)]))
+    (wires-for-pin-id board2 5) => [((:wires board2) 2)]
+
+    (dissoc (output-pin-for-wire board2 w1) :wire-ids) => o3
+    (dissoc (input-pin-for-wire board2 w1) :wire-ids) => i4))
 
 (facts
   "add-gates"

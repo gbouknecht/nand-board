@@ -43,11 +43,53 @@
   (let [pin-ids (mapcat #(conj (:input-pin-ids %) (:output-pin-id %)) gates)]
     (map #(get-in board [:pins %]) pin-ids)))
 
+(defn input-pins-for-gate [board gate]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/gate gate)]
+   :post [(every? (partial valid? ::board-spec/pin) %)]}
+  (map #(get-in board [:pins %]) (:input-pin-ids gate)))
+
+(defn output-pin-for-gate [board gate]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/gate gate)]
+   :post [(valid? ::board-spec/pin %)]}
+  (get-in board [:pins (:output-pin-id gate)]))
+
+(defn input-pin? [board pin]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/pin pin)]}
+  (let [gate (gate-for-pin-id board (:id pin))]
+    (contains? (:input-pin-ids gate) (:id pin))))
+
+(defn output-pin? [board pin]
+  {:pre [(valid? ::board-spec/board board)
+         (valid? ::board-spec/pin pin)]}
+  (let [gate (gate-for-pin-id board (:id pin))]
+    (= (:output-pin-id gate) (:id pin))))
+
 (defn wires-for-pin-id [board pin-id]
   {:pre  [(valid? ::board-spec/board board)]
    :post [(every? (partial valid? ::board-spec/wire) %)]}
   (let [wire-ids (get-in board [:pins pin-id :wire-ids])]
     (map #(get-in board [:wires %]) wire-ids)))
+
+(defn wires-for-pin [board pin]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/pin pin)]
+   :post [(every? (partial valid? ::board-spec/wire) %)]}
+  (wires-for-pin-id board (:id pin)))
+
+(defn output-pin-for-wire [board wire]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/wire wire)]
+   :post [(valid? ::board-spec/pin %)]}
+  (get-in board [:pins (:output-pin-id wire)]))
+
+(defn input-pin-for-wire [board wire]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/wire wire)]
+   :post [(valid? ::board-spec/pin %)]}
+  (get-in board [:pins (:input-pin-id wire)]))
 
 (defn last-added-wires [board]
   {:pre  [(valid? ::board-spec/board board)]
