@@ -25,16 +25,22 @@
 (defn- make-wire [id output-pin-id input-pin-id]
   {:id id :output-pin-id output-pin-id :input-pin-id input-pin-id})
 
-(defn gate-for-pin-id [board pin-id]
-  {:pre  [(valid? ::board-spec/board board)]
+(defn gate-for-pin [board pin]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/pin pin)]
    :post [(valid? (s/nilable ::board-spec/gate) %)]}
-  (let [gate-id (get-in board [:pins pin-id :gate-id])]
+  (let [gate-id (get-in board [:pins (:id pin) :gate-id])]
     (get-in board [:gates gate-id])))
 
 (defn last-added-gates [board]
   {:pre  [(valid? ::board-spec/board board)]
    :post [(every? (partial valid? ::board-spec/gate) %)]}
   (:last-added-gates board))
+
+(defn pin-for-id [board id]
+  {:pre  [(valid? ::board-spec/board board)]
+   :post [(valid? (s/nilable ::board-spec/pin) %)]}
+  (get-in board [:pins id]))
 
 (defn pins-for-gates [board gates]
   {:pre  [(valid? ::board-spec/board board)
@@ -56,15 +62,15 @@
   (get-in board [:pins (:output-pin-id gate)]))
 
 (defn input-pin? [board pin]
-  {:pre  [(valid? ::board-spec/board board)
-          (valid? ::board-spec/pin pin)]}
-  (let [gate (gate-for-pin-id board (:id pin))]
+  {:pre [(valid? ::board-spec/board board)
+         (valid? ::board-spec/pin pin)]}
+  (let [gate (gate-for-pin board pin)]
     (contains? (:input-pin-ids gate) (:id pin))))
 
 (defn output-pin? [board pin]
   {:pre [(valid? ::board-spec/board board)
          (valid? ::board-spec/pin pin)]}
-  (let [gate (gate-for-pin-id board (:id pin))]
+  (let [gate (gate-for-pin board pin)]
     (= (:output-pin-id gate) (:id pin))))
 
 (defn wires-for-pin-id [board pin-id]
@@ -117,8 +123,8 @@
     (nth (iterate add-gate board) n)))
 
 (defn- add-wire [board output-pin input-pin]
-  {:pre [(= (:id output-pin) (:output-pin-id (gate-for-pin-id board (:id output-pin))))
-         (some #{(:id input-pin)} (:input-pin-ids (gate-for-pin-id board (:id input-pin))))]}
+  {:pre [(= (:id output-pin) (:output-pin-id (gate-for-pin board output-pin)))
+         (contains? (:input-pin-ids (gate-for-pin board input-pin)) (:id input-pin))]}
   (let [wire-id (:next-wire-id board)
         wire (make-wire wire-id (:id output-pin) (:id input-pin))]
     (-> board

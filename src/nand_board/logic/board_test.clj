@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer [=> =not=> contains just fact facts throws]]
             [nand-board.logic.board :refer [add-gates
                                             add-wires
-                                            gate-for-pin-id
+                                            gate-for-pin
                                             input-pin-for-wire
                                             input-pin?
                                             input-pins-for-gate
@@ -12,6 +12,7 @@
                                             output-pin-for-wire
                                             output-pin?
                                             output-pin-for-gate
+                                            pin-for-id
                                             pins-for-gates
                                             remove-gate
                                             remove-wires
@@ -40,10 +41,15 @@
     [i4 i5 o6] => (map #(get-in board1 [:pins %]) (range 3 6))
     [w1 w2 w3] => (map #(get-in board2 [:wires %]) (range 0 3))
 
-    (gate-for-pin-id board2 0) => ((:gates board2) 0)
-    (gate-for-pin-id board2 1) => ((:gates board2) 0)
-    (gate-for-pin-id board2 2) => ((:gates board2) 0)
-    (gate-for-pin-id board2 3) => ((:gates board2) 1)
+    (gate-for-pin board2 i1) => ((:gates board2) 0)
+    (gate-for-pin board2 i2) => ((:gates board2) 0)
+    (gate-for-pin board2 o3) => ((:gates board2) 0)
+    (gate-for-pin board2 i4) => ((:gates board2) 1)
+
+    (pin-for-id board1 (:id i1)) => i1
+    (pin-for-id board1 (:id i2)) => i2
+    (pin-for-id board1 (:id o3)) => o3
+    (pin-for-id board1 (:id i4)) => i4
 
     (input-pins-for-gate board1 g1) => [i1 i2]
     (input-pins-for-gate board1 g2) => [i4 i5]
@@ -129,12 +135,9 @@
   (fact
     "should only accept an 'output' pin and an 'input' pin respectively"
     (let [board (-> (make-initial-board) (add-gates 2))
-          [i1 i2 o3 _ _ o6] (pins-for-gates board (last-added-gates board))
-          [i7 _ o9] [{:id 6} {:id 7} {:id 8}]]
+          [i1 i2 o3 _ _ o6] (pins-for-gates board (last-added-gates board))]
       (add-wires board [i2 i1]) => (throws AssertionError)
-      (add-wires board [o9 i1]) => (throws AssertionError)
-      (add-wires board [o3 o6]) => (throws AssertionError)
-      (add-wires board [o3 i7]) => (throws AssertionError))))
+      (add-wires board [o3 o6]) => (throws AssertionError))))
 
 (facts
   "remove-wire"

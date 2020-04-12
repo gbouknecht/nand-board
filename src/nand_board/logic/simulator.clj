@@ -1,9 +1,10 @@
 (ns nand-board.logic.simulator
-  (:require [nand-board.logic.board :refer [gate-for-pin-id
+  (:require [nand-board.logic.board :refer [gate-for-pin
                                             input-pin-for-wire
                                             input-pin?
                                             input-pins-for-gate
                                             output-pin-for-gate
+                                            pin-for-id
                                             wires-for-pin
                                             wires-for-pin-id]]
             [nand-board.logic.board-spec :as board-spec]
@@ -37,7 +38,8 @@
                                             :val    (nand input-vals)}))))
 
 (defn- propagate [state pin-id]
-  (let [gate (gate-for-pin-id (:board state) pin-id)
+  (let [pin (pin-for-id (:board state) pin-id)
+        gate (gate-for-pin (:board state) pin)
         output-pin (output-pin-for-gate (:board state) gate)]
     (if (= pin-id (:id output-pin))
       (propagate-output state gate)
