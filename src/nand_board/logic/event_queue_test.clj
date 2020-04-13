@@ -1,8 +1,6 @@
 (ns nand-board.logic.event-queue-test
   (:require [midje.sweet :refer [=> fact]]
-            [nand-board.logic.event-queue :refer [add-event
-                                                  add-events
-                                                  make-event-queue]]))
+            [nand-board.logic.event-queue :refer :all]))
 
 (fact
   "event-queue should differentiate events on :time and :pin-id only"

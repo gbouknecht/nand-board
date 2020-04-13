@@ -1,22 +1,6 @@
 (ns nand-board.logic.board-test
   (:require [midje.sweet :refer [=> =not=> contains just fact facts throws]]
-            [nand-board.logic.board :refer [add-gates
-                                            add-wires
-                                            gate-for-pin
-                                            input-pin-for-wire
-                                            input-pin?
-                                            input-pins-for-gate
-                                            last-added-gates
-                                            last-added-wires
-                                            make-initial-board
-                                            output-pin-for-wire
-                                            output-pin?
-                                            output-pin-for-gate
-                                            pin-for-id
-                                            pins-for-gates
-                                            remove-gate
-                                            remove-wires
-                                            wires-for-pin]]))
+            [nand-board.logic.board :refer :all]))
 
 (facts
   "make-initial-board"

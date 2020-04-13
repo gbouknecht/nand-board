@@ -5,10 +5,7 @@
                                             last-added-gates
                                             make-initial-board
                                             pins-for-gates]]
-            [nand-board.logic.simulator :refer [make-initial-state
-                                                pending-events?
-                                                set-val
-                                                tick]]))
+            [nand-board.logic.simulator :refer :all]))
 
 (defn- ticks [state]
   (if (pending-events? state)
