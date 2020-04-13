@@ -73,17 +73,12 @@
   (let [gate (gate-for-pin board pin)]
     (= (:output-pin-id gate) (:id pin))))
 
-(defn wires-for-pin-id [board pin-id]
-  {:pre  [(valid? ::board-spec/board board)]
-   :post [(every? (partial valid? ::board-spec/wire) %)]}
-  (let [wire-ids (get-in board [:pins pin-id :wire-ids])]
-    (map #(get-in board [:wires %]) wire-ids)))
-
 (defn wires-for-pin [board pin]
   {:pre  [(valid? ::board-spec/board board)
           (valid? ::board-spec/pin pin)]
    :post [(every? (partial valid? ::board-spec/wire) %)]}
-  (wires-for-pin-id board (:id pin)))
+  (let [wire-ids (get-in board [:pins (:id pin) :wire-ids])]
+    (map #(get-in board [:wires %]) wire-ids)))
 
 (defn output-pin-for-wire [board wire]
   {:pre  [(valid? ::board-spec/board board)
@@ -172,7 +167,7 @@
           (contains? (:gates board) (:id gate))]
    :post [(valid? ::board-spec/board %)]}
   (let [pins (pins-for-gates board [gate])
-        wires (set (mapcat #(wires-for-pin-id board (:id %)) pins))]
+        wires (set (mapcat (partial wires-for-pin board) pins))]
     (-> board
         (remove-wires wires)
         (update :gates dissoc (:id gate))

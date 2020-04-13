@@ -16,8 +16,7 @@
                                             pins-for-gates
                                             remove-gate
                                             remove-wires
-                                            wires-for-pin
-                                            wires-for-pin-id]]))
+                                            wires-for-pin]]))
 
 (facts
   "make-initial-board"
@@ -70,13 +69,6 @@
     (wires-for-pin board2 i4) => [((:wires board2) 0)]
     (wires-for-pin board2 i5) => [((:wires board2) 1)]
     (wires-for-pin board2 o6) => [((:wires board2) 2)]
-
-    (wires-for-pin-id board2 0) => [((:wires board2) 2)]
-    (wires-for-pin-id board2 1) => empty?
-    (wires-for-pin-id board2 2) => (just [((:wires board2) 0) ((:wires board2) 1)] :in-any-order)
-    (wires-for-pin-id board2 3) => [((:wires board2) 0)]
-    (wires-for-pin-id board2 4) => [((:wires board2) 1)]
-    (wires-for-pin-id board2 5) => [((:wires board2) 2)]
 
     (dissoc (output-pin-for-wire board2 w1) :wire-ids) => o3
     (dissoc (input-pin-for-wire board2 w1) :wire-ids) => i4))

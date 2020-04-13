@@ -5,8 +5,7 @@
                                             input-pins-for-gate
                                             output-pin-for-gate
                                             pin-for-id
-                                            wires-for-pin
-                                            wires-for-pin-id]]
+                                            wires-for-pin]]
             [nand-board.logic.board-spec :as board-spec]
             [nand-board.logic.event-queue :refer [add-event
                                                   add-events
