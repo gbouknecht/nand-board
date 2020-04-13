@@ -1,6 +1,5 @@
 (ns nand-board.logic.board
-  (:require [clojure.spec.alpha :as s]
-            [nand-board.logic.board-spec :as board-spec]
+  (:require [nand-board.logic.board-spec :as board-spec]
             [nand-board.logic.spec-helpers :refer [valid?]]))
 
 (defn make-initial-board []
@@ -28,7 +27,7 @@
 (defn gate-for-pin [board pin]
   {:pre  [(valid? ::board-spec/board board)
           (valid? ::board-spec/pin pin)]
-   :post [(valid? (s/nilable ::board-spec/gate) %)]}
+   :post [(valid? ::board-spec/gate %)]}
   (let [gate-id (get-in board [:pins (:id pin) :gate-id])]
     (get-in board [:gates gate-id])))
 
@@ -39,7 +38,7 @@
 
 (defn pin-for-id [board id]
   {:pre  [(valid? ::board-spec/board board)]
-   :post [(valid? (s/nilable ::board-spec/pin) %)]}
+   :post [(valid? ::board-spec/pin %)]}
   (get-in board [:pins id]))
 
 (defn pins-for-gates [board gates]
@@ -62,14 +61,10 @@
   (get-in board [:pins (:output-pin-id gate)]))
 
 (defn input-pin? [board pin]
-  {:pre [(valid? ::board-spec/board board)
-         (valid? ::board-spec/pin pin)]}
   (let [gate (gate-for-pin board pin)]
     (contains? (:input-pin-ids gate) (:id pin))))
 
 (defn output-pin? [board pin]
-  {:pre [(valid? ::board-spec/board board)
-         (valid? ::board-spec/pin pin)]}
   (let [gate (gate-for-pin board pin)]
     (= (:output-pin-id gate) (:id pin))))
 
@@ -158,7 +153,7 @@
   {:pre  [(valid? ::board-spec/board board)
           (every? (partial valid? ::board-spec/wire) wires)
           (every? (partial contains? (:wires board)) (map :id wires))
-          (or (empty? wires) (apply distinct? (map :id wires)))]
+          (or (empty? wires) (apply distinct? wires))]
    :post [(valid? ::board-spec/board %)]}
   (reduce remove-wire board wires))
 
