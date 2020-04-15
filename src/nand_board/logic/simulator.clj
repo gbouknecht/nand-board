@@ -1,5 +1,6 @@
 (ns nand-board.logic.simulator
-  (:require [nand-board.logic.board :refer [gate-for-pin
+  (:require [clojure.spec.alpha :as s]
+            [nand-board.logic.board :refer [gate-for-pin
                                             input-pin-for-wire
                                             input-pin?
                                             input-pins-for-gate
@@ -84,6 +85,12 @@
   (-> state
       (update :time inc)
       process-events))
+
+(defn get-val [state pin]
+  {:pre  [(valid? ::state-spec/state state)
+          (valid? ::board-spec/pin pin)]
+   :post [(valid? (s/nilable ::state-spec/val) %)]}
+  (get-in state [:vals (:id pin)]))
 
 (defn set-val [state input-pin val]
   {:pre  [(valid? ::state-spec/state state)
