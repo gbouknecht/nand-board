@@ -1,6 +1,7 @@
 (ns nand-board.logic.simulator
   (:require [clojure.spec.alpha :as s]
             [nand-board.logic.board :refer [gate-for-pin
+                                            gates
                                             input-pin-for-wire
                                             input-pin?
                                             input-pins-for-gate
@@ -71,7 +72,7 @@
 (defn make-initial-state [board]
   {:pre  [(valid? ::board-spec/board board)]
    :post [(valid? ::state-spec/state %)]}
-  (let [gates (vals (:gates board))
+  (let [gates (gates board)
         make-event (fn [pin] {:time 0 :pin-id (:id pin) :val 0})
         events (->> gates
                     (mapcat (partial input-pins-for-gate board))

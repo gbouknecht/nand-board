@@ -4,15 +4,20 @@
 
 (facts
   "retrieval"
-  (let [board1 (-> (make-initial-board) (add-gates 3))
-        [g1 g2 g3] (last-added-gates board1)
-        [i1 i2 o3 i4 i5 o6 _ _ o9] (pins-for-gates board1 [g1 g2 g3])
-        board2 (-> board1 (add-wires [o3 i4] [o3 i5] [o6 i1]))
-        [w1 w2 w3] (last-added-wires board2)]
-    (gate-for-pin board2 i1) => g1
-    (gate-for-pin board2 i2) => g1
-    (gate-for-pin board2 o3) => g1
-    (gate-for-pin board2 i4) => g2
+  (let [board1 (-> (make-initial-board) (add-gates 2))
+        [g1 g2] (last-added-gates board1)
+        [i1 i2 o3 i4 i5 o6] (pins-for-gates board1 [g1 g2])
+        board2 (-> board1 (add-gates 1))
+        [g3] (last-added-gates board2)
+        [_ _ o9] (pins-for-gates board2 [g3])
+        board3 (-> board2 (add-wires [o3 i4] [o3 i5] [o6 i1]))
+        [w1 w2 w3] (last-added-wires board3)]
+    (gates board3) => [g1 g2 g3]
+
+    (gate-for-pin board3 i1) => g1
+    (gate-for-pin board3 i2) => g1
+    (gate-for-pin board3 o3) => g1
+    (gate-for-pin board3 i4) => g2
 
     (pin-for-id board1 (:id i1)) => i1
     (pin-for-id board1 (:id i2)) => i2
@@ -31,20 +36,20 @@
     (output-pin? board1 i2) => false
     (output-pin? board1 o3) => true
 
-    (wires-for-pin board2 i1) => [w3]
-    (wires-for-pin board2 i2) => empty?
-    (wires-for-pin board2 o3) => (just [w1 w2] :in-any-order)
-    (wires-for-pin board2 i4) => [w1]
-    (wires-for-pin board2 i5) => [w2]
-    (wires-for-pin board2 o6) => [w3]
+    (wires-for-pin board3 i1) => [w3]
+    (wires-for-pin board3 i2) => empty?
+    (wires-for-pin board3 o3) => (just [w1 w2] :in-any-order)
+    (wires-for-pin board3 i4) => [w1]
+    (wires-for-pin board3 i5) => [w2]
+    (wires-for-pin board3 o6) => [w3]
 
-    (unwired? board2 i1) => false
-    (unwired? board2 i2) => true
-    (unwired? board2 o3) => false
-    (unwired? board2 o9) => true
+    (unwired? board3 i1) => false
+    (unwired? board3 i2) => true
+    (unwired? board3 o3) => false
+    (unwired? board3 o9) => true
 
-    (:id (output-pin-for-wire board2 w1)) => (:id o3)
-    (:id (input-pin-for-wire board2 w1)) => (:id i4)))
+    (:id (output-pin-for-wire board3 w1)) => (:id o3)
+    (:id (input-pin-for-wire board3 w1)) => (:id i4)))
 
 (facts
   "add-gates"

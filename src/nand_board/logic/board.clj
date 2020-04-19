@@ -24,6 +24,11 @@
 (defn- make-wire [id output-pin-id input-pin-id]
   {:id id :output-pin-id output-pin-id :input-pin-id input-pin-id})
 
+(defn gates [board]
+  {:pre  [(valid? ::board-spec/board board)]
+   :post [(every? (partial valid? ::board-spec/gate) %)]}
+  (vals (:gates board)))
+
 (defn gate-for-pin [board pin]
   {:pre  [(valid? ::board-spec/board board)
           (valid? ::board-spec/pin pin)]
@@ -76,8 +81,8 @@
     (map #(get-in board [:wires %]) wire-ids)))
 
 (defn unwired? [board pin]
-  {:pre  [(valid? ::board-spec/board board)
-          (valid? ::board-spec/pin pin)]}
+  {:pre [(valid? ::board-spec/board board)
+         (valid? ::board-spec/pin pin)]}
   (empty? (wires-for-pin board pin)))
 
 (defn output-pin-for-wire [board wire]
