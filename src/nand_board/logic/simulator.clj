@@ -7,6 +7,7 @@
                                             output-pin?
                                             output-pin-for-gate
                                             pin-for-id
+                                            unwired?
                                             wires-for-pin]]
             [nand-board.logic.board-spec :as board-spec]
             [nand-board.logic.event-queue :refer [add-event
@@ -71,11 +72,10 @@
   {:pre  [(valid? ::board-spec/board board)]
    :post [(valid? ::state-spec/state %)]}
   (let [gates (vals (:gates board))
-        unwired? (fn [pin] (empty? (wires-for-pin board pin)))
         make-event (fn [pin] {:time 0 :pin-id (:id pin) :val 0})
         events (->> gates
                     (mapcat (partial input-pins-for-gate board))
-                    (filter unwired?)
+                    (filter (partial unwired? board))
                     (map make-event))
         event-queue (-> (make-event-queue) (add-events events))
         state {:time 0 :board board :vals {} :event-queue event-queue}]
@@ -98,7 +98,7 @@
 (defn set-val [state input-pin val]
   {:pre  [(valid? ::state-spec/state state)
           (input-pin? (:board state) input-pin)
-          (empty? (wires-for-pin (:board state) input-pin))]
+          (unwired? (:board state) input-pin)]
    :post [(valid? ::state-spec/state %)]}
   (-> state
       (update :event-queue add-event {:time (:time state) :pin-id (:id input-pin) :val val})

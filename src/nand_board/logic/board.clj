@@ -75,6 +75,11 @@
   (let [wire-ids (get-in board [:pins (:id pin) :wire-ids])]
     (map #(get-in board [:wires %]) wire-ids)))
 
+(defn unwired? [board pin]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/pin pin)]}
+  (empty? (wires-for-pin board pin)))
+
 (defn output-pin-for-wire [board wire]
   {:pre  [(valid? ::board-spec/board board)
           (valid? ::board-spec/wire wire)]

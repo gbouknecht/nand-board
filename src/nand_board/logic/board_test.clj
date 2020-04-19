@@ -4,9 +4,9 @@
 
 (facts
   "retrieval"
-  (let [board1 (-> (make-initial-board) (add-gates 2))
-        [g1 g2] (last-added-gates board1)
-        [i1 i2 o3 i4 i5 o6] (pins-for-gates board1 [g1 g2])
+  (let [board1 (-> (make-initial-board) (add-gates 3))
+        [g1 g2 g3] (last-added-gates board1)
+        [i1 i2 o3 i4 i5 o6 _ _ o9] (pins-for-gates board1 [g1 g2 g3])
         board2 (-> board1 (add-wires [o3 i4] [o3 i5] [o6 i1]))
         [w1 w2 w3] (last-added-wires board2)]
     (gate-for-pin board2 i1) => g1
@@ -37,6 +37,11 @@
     (wires-for-pin board2 i4) => [w1]
     (wires-for-pin board2 i5) => [w2]
     (wires-for-pin board2 o6) => [w3]
+
+    (unwired? board2 i1) => false
+    (unwired? board2 i2) => true
+    (unwired? board2 o3) => false
+    (unwired? board2 o9) => true
 
     (:id (output-pin-for-wire board2 w1)) => (:id o3)
     (:id (input-pin-for-wire board2 w1)) => (:id i4)))
