@@ -24,10 +24,8 @@
   (s/valid? ::board-spec/wire-ids #{0}) => true
   (s/valid? ::board-spec/wire-ids #{0 1}) => true
   (s/valid? ::board-spec/wire-ids #{0 1 2}) => true
-  (s/valid? ::board-spec/wire-ids #{0 -1 2}) => false
-  (s/valid? ::board-spec/wire-ids #{0 "1" 2}) => false
 
-  (let [pin  {:id 0 :gate-id 0}
+  (let [pin {:id 0 :gate-id 0}
         pins {0 pin 1 (assoc pin :id 1)}]
     (s/valid? ::board-spec/pins pins) => true
     (s/valid? ::board-spec/pins (assoc-in pins [0 :id] 1)) => false

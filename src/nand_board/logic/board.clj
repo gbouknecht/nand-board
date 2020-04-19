@@ -113,7 +113,7 @@
     (nth (iterate add-gate board) n)))
 
 (defn- add-wire [board output-pin input-pin]
-  {:pre [(= (:id output-pin) (:output-pin-id (gate-for-pin board output-pin)))
+  {:pre [(= (:output-pin-id (gate-for-pin board output-pin)) (:id output-pin))
          (contains? (:input-pin-ids (gate-for-pin board input-pin)) (:id input-pin))]}
   (let [wire-id (:next-wire-id board)
         wire (make-wire wire-id (:id output-pin) (:id input-pin))]

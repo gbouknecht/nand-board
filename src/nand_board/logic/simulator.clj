@@ -4,6 +4,7 @@
                                             input-pin-for-wire
                                             input-pin?
                                             input-pins-for-gate
+                                            output-pin?
                                             output-pin-for-gate
                                             pin-for-id
                                             wires-for-pin]]
@@ -21,27 +22,29 @@
   (- 1 (apply * input-vals)))
 
 (defn- propagate-output [state gate]
-  (let [output-pin (output-pin-for-gate (:board state) gate)
-        wires (wires-for-pin (:board state) output-pin)
+  (let [board (:board state)
+        output-pin (output-pin-for-gate board gate)
         output-val (get-in state [:vals (:id output-pin)])
+        wires (wires-for-pin board output-pin)
         make-event (fn [pin] {:time (+ (:time state) wire-delay) :pin-id (:id pin) :val output-val})
-        events (map make-event (map (partial input-pin-for-wire (:board state)) wires))]
+        events (map make-event (map (partial input-pin-for-wire board) wires))]
     (update state :event-queue add-events events)))
 
 (defn- propagate-inputs [state gate]
-  (let [input-pin-ids (map :id (input-pins-for-gate (:board state) gate))
-        input-vals (map #(get-in state [:vals %]) input-pin-ids)]
+  (let [board (:board state)
+        input-pins (input-pins-for-gate board gate)
+        input-vals (map #(get-in state [:vals (:id %)]) input-pins)]
     (if (some nil? input-vals)
       state
       (update state :event-queue add-event {:time   (+ (:time state) gate-delay)
-                                            :pin-id (:id (output-pin-for-gate (:board state) gate))
+                                            :pin-id (:id (output-pin-for-gate board gate))
                                             :val    (nand input-vals)}))))
 
 (defn- propagate [state pin-id]
-  (let [pin (pin-for-id (:board state) pin-id)
-        gate (gate-for-pin (:board state) pin)
-        output-pin (output-pin-for-gate (:board state) gate)]
-    (if (= pin-id (:id output-pin))
+  (let [board (:board state)
+        pin (pin-for-id board pin-id)
+        gate (gate-for-pin board pin)]
+    (if (output-pin? board pin)
       (propagate-output state gate)
       (propagate-inputs state gate))))
 

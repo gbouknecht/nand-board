@@ -11,7 +11,7 @@
     (set (mapcat entry->pairs map))))
 
 (defn- same-key-id-pairs [map]
-  (every? #(apply = %) (flatten-pairs map key #(get (val %) :id))))
+  (every? #(apply = %) (flatten-pairs map key #(:id (val %)))))
 
 (defn- empty-or-distinct? [coll]
   (or (empty? coll) (apply distinct? coll)))
