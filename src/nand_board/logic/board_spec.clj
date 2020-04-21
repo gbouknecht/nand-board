@@ -25,8 +25,8 @@
 (defn- pins-gate-pin-id-pairs [board]
   (flatten-pairs (:pins board) #(:gate-id (val %)) key))
 
-(defn- pins-pin-wire-id-pairs [board]
-  (flatten-pairs (:pins board) key #(:wire-ids (val %))))
+(defn- pin-to-wires-pin-wire-id-pairs [board]
+  (flatten-pairs (:pin-to-wires board) key val))
 
 (defn- wires-pin-wire-id-pairs [board]
   (flatten-pairs (:wires board) #((juxt :output-pin-id :input-pin-id) (val %)) key))
@@ -43,9 +43,8 @@
                      #(not (contains? (:input-pin-ids %) (:output-pin-id %)))))
 (s/def ::gates (s/and (s/map-of ::common-spec/id ::gate)
                       #(same-key-id-pairs %)))
-(s/def ::wire-ids (s/coll-of ::common-spec/id :kind set? :min-count 1))
 (s/def ::gate-id ::common-spec/id)
-(s/def ::pin (s/keys :req-un [::common-spec/id ::gate-id] :opt-un [::wire-ids]))
+(s/def ::pin (s/keys :req-un [::common-spec/id ::gate-id]))
 (s/def ::pins (s/and (s/map-of ::common-spec/id ::pin)
                      #(same-key-id-pairs %)))
 (s/def ::input-pin-id ::common-spec/id)
@@ -53,9 +52,11 @@
                      #(distinct? (:output-pin-id %) (:input-pin-id %))))
 (s/def ::wires (s/and (s/map-of ::common-spec/id ::wire)
                       #(same-key-id-pairs %)))
-(s/def ::board (s/and (s/keys :req-un [::gates ::pins ::wires])
+(s/def ::wire-ids (s/coll-of ::common-spec/id :kind set? :min-count 1))
+(s/def ::pin-to-wires (s/map-of ::common-spec/id ::wire-ids))
+(s/def ::board (s/and (s/keys :req-un [::gates ::pins ::wires ::pin-to-wires])
                       #(= (gates-gate-pin-id-pairs %) (pins-gate-pin-id-pairs %))
-                      #(= (pins-pin-wire-id-pairs %) (wires-pin-wire-id-pairs %))
+                      #(= (pin-to-wires-pin-wire-id-pairs %) (wires-pin-wire-id-pairs %))
                       #(empty-or-distinct? (wires-vals % :input-pin-id))
                       #(empty? (intersection (gates-pin-ids % :input-pin-ids) (wires-vals % :output-pin-id)))
                       #(empty? (intersection (gates-pin-ids % :output-pin-id) (wires-vals % :input-pin-id)))))

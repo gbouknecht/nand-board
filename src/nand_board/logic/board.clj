@@ -7,6 +7,7 @@
   {:gates            {}
    :pins             {}
    :wires            {}
+   :pin-to-wires     {}
    :next-gate-id     0
    :next-pin-id      0
    :next-wire-id     0
@@ -77,7 +78,7 @@
   {:pre  [(valid? ::board-spec/board board)
           (valid? ::board-spec/pin pin)]
    :post [(every? (partial valid? ::board-spec/wire) %)]}
-  (let [wire-ids (get-in board [:pins (:id pin) :wire-ids])]
+  (let [wire-ids (get-in board [:pin-to-wires (:id pin)])]
     (map #(get-in board [:wires %]) wire-ids)))
 
 (defn unwired? [board pin]
@@ -128,8 +129,8 @@
   (let [wire-id (:next-wire-id board)
         wire (make-wire wire-id (:id output-pin) (:id input-pin))]
     (-> board
-        (update-in [:pins (:id output-pin) :wire-ids] (fnil conj #{}) wire-id)
-        (update-in [:pins (:id input-pin) :wire-ids] (fnil conj #{}) wire-id)
+        (update-in [:pin-to-wires (:id output-pin)] (fnil conj #{}) wire-id)
+        (update-in [:pin-to-wires (:id input-pin)] (fnil conj #{}) wire-id)
         (assoc-in [:wires wire-id] wire)
         (assoc :next-wire-id (inc wire-id))
         (update :last-added-wires conj wire))))
@@ -143,12 +144,10 @@
     (reduce (partial apply add-wire) board pin-pairs)))
 
 (defn- remove-wire-from-pin [board pin-id wire]
-  (update-in board [:pins pin-id]
-             (fn [pin]
-               (let [wire-ids (disj (:wire-ids pin) (:id wire))]
-                 (if (empty? wire-ids)
-                   (dissoc pin :wire-ids)
-                   (assoc pin :wire-ids wire-ids))))))
+  (let [wire-ids (disj (get-in board [:pin-to-wires pin-id]) (:id wire))]
+    (if (empty? wire-ids)
+      (update board :pin-to-wires dissoc pin-id)
+      (update board :pin-to-wires assoc pin-id wire-ids))))
 
 (defn- remove-wire-from-pins [board wire]
   (let [pin-ids ((juxt :output-pin-id :input-pin-id) wire)]

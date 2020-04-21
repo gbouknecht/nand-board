@@ -39,37 +39,42 @@
       (s/valid? ::board-spec/wires (assoc-in wires [0 :id] 1)) => false
       (s/valid? ::board-spec/wires (assoc-in wires [0 :id] 2)) => false))
 
-  (let [board {:gates {0 {:id 0 :input-pin-ids #{0 1} :output-pin-id 2}
-                       1 {:id 1 :input-pin-ids #{3 4} :output-pin-id 5}
-                       2 {:id 2 :input-pin-ids #{6 7} :output-pin-id 8}}
-               :pins  {0 {:id 0 :gate-id 0}
-                       1 {:id 1 :gate-id 0}
-                       2 {:id 2 :gate-id 0 :wire-ids #{0 1}}
-                       3 {:id 3 :gate-id 1}
-                       4 {:id 4 :gate-id 1 :wire-ids #{0}}
-                       5 {:id 5 :gate-id 1 :wire-ids #{2}}
-                       6 {:id 6 :gate-id 2 :wire-ids #{1}}
-                       7 {:id 7 :gate-id 2 :wire-ids #{2}}
-                       8 {:id 8 :gate-id 2}}
-               :wires {0 {:id 0 :output-pin-id 2 :input-pin-id 4}
-                       1 {:id 1 :output-pin-id 2 :input-pin-id 6}
-                       2 {:id 2 :output-pin-id 5 :input-pin-id 7}}}]
-    (s/valid? ::board-spec/board {:gates {} :pins {} :wires {}}) => true
+  (let [board {:gates        {0 {:id 0 :input-pin-ids #{0 1} :output-pin-id 2}
+                              1 {:id 1 :input-pin-ids #{3 4} :output-pin-id 5}
+                              2 {:id 2 :input-pin-ids #{6 7} :output-pin-id 8}}
+               :pins         {0 {:id 0 :gate-id 0}
+                              1 {:id 1 :gate-id 0}
+                              2 {:id 2 :gate-id 0}
+                              3 {:id 3 :gate-id 1}
+                              4 {:id 4 :gate-id 1}
+                              5 {:id 5 :gate-id 1}
+                              6 {:id 6 :gate-id 2}
+                              7 {:id 7 :gate-id 2}
+                              8 {:id 8 :gate-id 2}}
+               :wires        {0 {:id 0 :output-pin-id 2 :input-pin-id 4}
+                              1 {:id 1 :output-pin-id 2 :input-pin-id 6}
+                              2 {:id 2 :output-pin-id 5 :input-pin-id 7}}
+               :pin-to-wires {2 #{0 1}
+                              4 #{0}
+                              5 #{2}
+                              6 #{1}
+                              7 #{2}}}]
+    (s/valid? ::board-spec/board {:gates {} :pins {} :wires {} :pin-to-wires {}}) => true
     (s/valid? ::board-spec/board board) => true
     (s/valid? ::board-spec/board (assoc-in board [:pins 1 :gate-id] 1)) => false
     (s/valid? ::board-spec/board (assoc-in board [:pins 2 :gate-id] 1)) => false
-    (s/valid? ::board-spec/board (assoc-in board [:pins 1 :wire-ids] #{Integer/MAX_VALUE})) => false
+    (s/valid? ::board-spec/board (assoc-in board [:pin-to-wires 1] #{Integer/MAX_VALUE})) => false
     (s/valid? ::board-spec/board (assoc-in board [:wires 1 :output-pin-id] 5)) => false
     (s/valid? ::board-spec/board (assoc-in board [:wires 1 :input-pin-id] 0)) => false
     (s/valid? ::board-spec/board (-> board
                                      (assoc-in [:wires 3] {:id 3 :output-pin-id 5 :input-pin-id 4})
-                                     (update-in [:pins 5 :wire-ids] conj 3)
-                                     (update-in [:pins 4 :wire-ids] conj 3))) => false
+                                     (update-in [:pin-to-wires 5] conj 3)
+                                     (update-in [:pin-to-wires 4] conj 3))) => false
     (s/valid? ::board-spec/board (-> board
                                      (assoc-in [:wires 3] {:id 3 :output-pin-id 0 :input-pin-id 1})
-                                     (assoc-in [:pins 0 :wire-ids] #{3})
-                                     (assoc-in [:pins 1 :wire-ids] #{3}))) => false
+                                     (assoc-in [:pin-to-wires 0] #{3})
+                                     (assoc-in [:pin-to-wires 1] #{3}))) => false
     (s/valid? ::board-spec/board (-> board
                                      (assoc-in [:wires 3] {:id 3 :output-pin-id 2 :input-pin-id 5})
-                                     (update-in [:pins 2 :wire-ids] conj 3)
-                                     (update-in [:pins 5 :wire-ids] conj 3))) => false))
+                                     (update-in [:pin-to-wires 2] conj 3)
+                                     (update-in [:pin-to-wires 5] conj 3))) => false))
