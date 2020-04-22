@@ -8,7 +8,8 @@
             [nand-board.logic.state-spec :as state-spec]))
 
 (defn- make-event-queue []
-  (sorted-set-by #(compare [(:time %1) (:pin-id %1)] [(:time %2) (:pin-id %2)])))
+  (letfn [(time-pin-id [event] [(:time event) (:id (:pin event))])]
+    (sorted-set-by #(compare (time-pin-id %1) (time-pin-id %2)))))
 
 (facts
   "state data structure"
@@ -29,15 +30,13 @@
         [i1 i2 o3 i4 i5 o6] (pins-for-gates board (last-added-gates board))
         state {:time        3
                :board       board
-               :vals        {(:id i1) 0, (:id o3) 1, (:id i4) 0, (:id i5) 0, (:id o6) 1}
+               :vals        {i1 0, o3 1, i4 0, i5 0, o6 1}
                :event-queue (conj (make-event-queue)
-                                  {:time 3 :pin-id (:id o3) :val 1}
-                                  {:time 4 :pin-id (:id i1) :val 1}
-                                  {:time 4 :pin-id (:id i2) :val 1}
-                                  {:time 5 :pin-id (:id i5) :val 1}
-                                  {:time 9 :pin-id (:id o3) :val 0})}]
+                                  {:time 3 :pin o3 :val 1}
+                                  {:time 4 :pin i1 :val 1}
+                                  {:time 4 :pin i2 :val 1}
+                                  {:time 5 :pin i5 :val 1}
+                                  {:time 9 :pin o3 :val 0})}]
     (s/valid? ::state-spec/state {:time 0 :board (make-initial-board) :vals {} :event-queue (make-event-queue)}) => true
     (s/valid? ::state-spec/state state) => true
-    (s/valid? ::state-spec/state (assoc-in state [:vals] {Integer/MAX_VALUE 0})) => false
-    (s/valid? ::state-spec/state (update-in state [:event-queue] conj {:time 5 :pin-id Integer/MAX_VALUE :val 1})) => false
-    (s/valid? ::state-spec/state (update-in state [:event-queue] conj {:time 2 :pin-id (:id i1) :val 1})) => false))
+    (s/valid? ::state-spec/state (update state :event-queue conj {:time 2 :pin i1 :val 1})) => false))

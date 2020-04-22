@@ -6,6 +6,12 @@
 (facts
   "board data structure"
 
+  (s/valid? ::board-spec/id -1) => false
+  (s/valid? ::board-spec/id 0) => true
+  (s/valid? ::board-spec/id 1) => true
+  (s/valid? ::board-spec/id 2) => true
+  (s/valid? ::board-spec/id "2") => false
+
   (s/valid? ::board-spec/input-pin-ids #{}) => false
   (s/valid? ::board-spec/input-pin-ids #{11}) => false
   (s/valid? ::board-spec/input-pin-ids #{11 13}) => true

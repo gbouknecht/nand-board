@@ -1,7 +1,6 @@
 (ns nand-board.logic.board-spec
   (:require [clojure.set :as set]
-            [clojure.spec.alpha :as s]
-            [nand-board.logic.common-spec :as common-spec]))
+            [clojure.spec.alpha :as s]))
 
 (defn- make-seqable [x]
   (if (seqable? x) x (list x)))
@@ -37,23 +36,24 @@
 (defn- wires-vals [board key]
   (->> (:wires board) vals (map key)))
 
-(s/def ::input-pin-ids (s/coll-of ::common-spec/id :kind set? :count 2))
-(s/def ::output-pin-id ::common-spec/id)
-(s/def ::gate (s/and (s/keys :req-un [::common-spec/id ::input-pin-ids ::output-pin-id])
+(s/def ::id (s/and int? (s/nonconforming (s/or :zero zero? :positive pos?))))
+(s/def ::input-pin-ids (s/coll-of ::id :kind set? :count 2))
+(s/def ::output-pin-id ::id)
+(s/def ::gate (s/and (s/keys :req-un [::id ::input-pin-ids ::output-pin-id])
                      #(not (contains? (:input-pin-ids %) (:output-pin-id %)))))
-(s/def ::gates (s/and (s/map-of ::common-spec/id ::gate)
+(s/def ::gates (s/and (s/map-of ::id ::gate)
                       #(same-key-id-pairs %)))
-(s/def ::gate-id ::common-spec/id)
-(s/def ::pin (s/keys :req-un [::common-spec/id ::gate-id]))
-(s/def ::pins (s/and (s/map-of ::common-spec/id ::pin)
+(s/def ::gate-id ::id)
+(s/def ::pin (s/keys :req-un [::id ::gate-id]))
+(s/def ::pins (s/and (s/map-of ::id ::pin)
                      #(same-key-id-pairs %)))
-(s/def ::input-pin-id ::common-spec/id)
-(s/def ::wire (s/and (s/keys :req-un [::common-spec/id ::output-pin-id ::input-pin-id])
+(s/def ::input-pin-id ::id)
+(s/def ::wire (s/and (s/keys :req-un [::id ::output-pin-id ::input-pin-id])
                      #(distinct? (:output-pin-id %) (:input-pin-id %))))
-(s/def ::wires (s/and (s/map-of ::common-spec/id ::wire)
+(s/def ::wires (s/and (s/map-of ::id ::wire)
                       #(same-key-id-pairs %)))
-(s/def ::wire-ids (s/coll-of ::common-spec/id :kind set? :min-count 1))
-(s/def ::pin-to-wires (s/map-of ::common-spec/id ::wire-ids))
+(s/def ::wire-ids (s/coll-of ::id :kind set? :min-count 1))
+(s/def ::pin-to-wires (s/map-of ::id ::wire-ids))
 (s/def ::board (s/and (s/keys :req-un [::gates ::pins ::wires ::pin-to-wires])
                       #(= (gates-gate-pin-id-pairs %) (pins-gate-pin-id-pairs %))
                       #(= (pin-to-wires-pin-wire-id-pairs %) (wires-pin-wire-id-pairs %))

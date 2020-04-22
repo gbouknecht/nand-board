@@ -4,7 +4,8 @@
 
 (defn make-event-queue []
   {:post [(valid? ::state-spec/event-queue %)]}
-  (sorted-set-by #(compare [(:time %1) (:pin-id %1)] [(:time %2) (:pin-id %2)])))
+  (letfn [(time-pin-id [event] [(:time event) (:id (:pin event))])]
+    (sorted-set-by #(compare (time-pin-id %1) (time-pin-id %2)))))
 
 (defn add-event [event-queue event]
   {:pre  [(valid? ::state-spec/event-queue event-queue)
