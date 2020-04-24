@@ -42,11 +42,6 @@
    :post [(every? (partial valid? ::board-spec/gate) %)]}
   (:last-added-gates board))
 
-(defn pin-for-id [board id]
-  {:pre  [(valid? ::board-spec/board board)]
-   :post [(valid? ::board-spec/pin %)]}
-  (get-in board [:pins id]))
-
 (defn pins-for-gates [board gates]
   {:pre  [(valid? ::board-spec/board board)
           (every? (partial valid? ::board-spec/gate) gates)]

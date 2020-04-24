@@ -19,11 +19,6 @@
     (gate-for-pin board3 o3) => g1
     (gate-for-pin board3 i4) => g2
 
-    (pin-for-id board1 (:id i1)) => i1
-    (pin-for-id board1 (:id i2)) => i2
-    (pin-for-id board1 (:id o3)) => o3
-    (pin-for-id board1 (:id i4)) => i4
-
     (input-pins-for-gate board1 g1) => [i1 i2]
     (input-pins-for-gate board1 g2) => [i4 i5]
     (output-pin-for-gate board1 g1) => o3
