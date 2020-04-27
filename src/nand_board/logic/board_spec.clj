@@ -33,6 +33,15 @@
 (defn- gates-pin-ids [board key]
   (->> (:gates board) vals (map (comp seq make-seqable key)) flatten))
 
+(defn- input-pin-ids [board]
+  (gates-pin-ids board :input-pin-ids))
+
+(defn- output-pin-ids [board]
+  (let [gateless-pin? #(not (contains? % :gate-id))
+        gate-output-pin-ids (gates-pin-ids board :output-pin-id)
+        gateless-output-pin-ids (->> (:pins board) vals (filter gateless-pin?) (map :id))]
+    (concat gate-output-pin-ids gateless-output-pin-ids)))
+
 (defn- wires-vals [board key]
   (->> (:wires board) vals (map key)))
 
@@ -44,7 +53,7 @@
 (s/def ::gates (s/and (s/map-of ::id ::gate)
                       #(same-key-id-pairs %)))
 (s/def ::gate-id ::id)
-(s/def ::pin (s/keys :req-un [::id ::gate-id]))
+(s/def ::pin (s/keys :req-un [::id] :opt-un [::gate-id]))
 (s/def ::pins (s/and (s/map-of ::id ::pin)
                      #(same-key-id-pairs %)))
 (s/def ::input-pin-id ::id)
@@ -58,5 +67,5 @@
                       #(= (gates-gate-pin-id-pairs %) (pins-gate-pin-id-pairs %))
                       #(= (pin-to-wires-pin-wire-id-pairs %) (wires-pin-wire-id-pairs %))
                       #(empty-or-distinct? (wires-vals % :input-pin-id))
-                      #(empty? (intersection (gates-pin-ids % :input-pin-ids) (wires-vals % :output-pin-id)))
-                      #(empty? (intersection (gates-pin-ids % :output-pin-id) (wires-vals % :input-pin-id)))))
+                      #(empty? (intersection (input-pin-ids %) (wires-vals % :output-pin-id)))
+                      #(empty? (intersection (output-pin-ids %) (wires-vals % :input-pin-id)))))

@@ -1,5 +1,6 @@
 (ns nand-board.logic.board
-  (:require [nand-board.logic.board-spec :as board-spec]
+  (:require [clojure.spec.alpha :as s]
+            [nand-board.logic.board-spec :as board-spec]
             [nand-board.logic.spec-helpers :refer [valid?]]))
 
 (defn make-initial-board []
@@ -12,6 +13,7 @@
    :next-pin-id      0
    :next-wire-id     0
    :last-added-gates []
+   :last-added-pins  []
    :last-added-wires []})
 
 (defn- make-gate [id [pin-id-0 pin-id-1 pin-id-2]]
@@ -33,7 +35,7 @@
 (defn gate-for-pin [board pin]
   {:pre  [(valid? ::board-spec/board board)
           (valid? ::board-spec/pin pin)]
-   :post [(valid? ::board-spec/gate %)]}
+   :post [(valid? (s/nilable ::board-spec/gate) %)]}
   (let [gate-id (get-in board [:pins (:id pin) :gate-id])]
     (get-in board [:gates gate-id])))
 
@@ -61,13 +63,19 @@
    :post [(valid? ::board-spec/pin %)]}
   (get-in board [:pins (:output-pin-id gate)]))
 
+(defn last-added-pins [board]
+  {:pre  [(valid? ::board-spec/board board)]
+   :post [(every? (partial valid? ::board-spec/pin) %)]}
+  (:last-added-pins board))
+
 (defn input-pin? [board pin]
   (let [gate (gate-for-pin board pin)]
     (contains? (:input-pin-ids gate) (:id pin))))
 
 (defn output-pin? [board pin]
   (let [gate (gate-for-pin board pin)]
-    (= (:output-pin-id gate) (:id pin))))
+    (or (nil? gate)
+        (= (:output-pin-id gate) (:id pin)))))
 
 (defn wires-for-pin [board pin]
   {:pre  [(valid? ::board-spec/board board)
@@ -118,9 +126,23 @@
   (let [board (assoc board :last-added-gates [])]
     (nth (iterate add-gate board) n)))
 
+(defn- add-pin [board]
+  (let [pin-id (:next-pin-id board)
+        pin {:id pin-id}]
+    (-> board
+        (assoc-in [:pins pin-id] pin)
+        (assoc :next-pin-id (inc pin-id))
+        (update :last-added-pins conj pin))))
+
+(defn add-pins [board n]
+  {:pre  [(valid? ::board-spec/board board)]
+   :post [(valid? ::board-spec/board %)]}
+  (let [board (assoc board :last-added-pins [])]
+    (nth (iterate add-pin board) n)))
+
 (defn- add-wire [board output-pin input-pin]
-  {:pre [(= (:output-pin-id (gate-for-pin board output-pin)) (:id output-pin))
-         (contains? (:input-pin-ids (gate-for-pin board input-pin)) (:id input-pin))]}
+  {:pre [(output-pin? board output-pin)
+         (input-pin? board input-pin)]}
   (let [wire-id (:next-wire-id board)
         wire (make-wire wire-id (:id output-pin) (:id input-pin))]
     (-> board
