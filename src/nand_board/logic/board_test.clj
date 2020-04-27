@@ -157,8 +157,8 @@
       (wires-for-pin board3 i1) => empty?
       (wires-for-pin board3 i2) => [w4]
       (wires-for-pin board3 o3) => (just [w2 w4] :in-any-order)
-      (wires-for-pin board3 i5) => empty?
-      (wires-for-pin board3 o6) => empty?
+      (wires-for-pin board3 i5) => (throws AssertionError)
+      (wires-for-pin board3 o6) => (throws AssertionError)
       (wires-for-pin board3 i7) => [w2]))
 
   (fact
@@ -167,5 +167,31 @@
           [g1] (last-added-gates board1)
           [i1 _ o3] (pins-for-gates board1 [g1])
           board2 (-> board1 (add-wires [o3 i1]) (remove-gate g1))]
-      (wires-for-pin board2 i1) => empty?
-      (wires-for-pin board2 o3) => empty?)))
+      (wires-for-pin board2 i1) => (throws AssertionError)
+      (wires-for-pin board2 o3) => (throws AssertionError))))
+
+(facts
+  "remove-pin"
+
+  (fact
+    "should remove pin and wires"
+    (let [board1 (-> (make-initial-board) (add-pins 2) (add-gates 2))
+          [p1 p2] (last-added-pins board1)
+          [i1 i2 o3 i4 i5 _] (pins-for-gates board1 (last-added-gates board1))
+          board2 (-> board1 (add-wires [p1 i1] [p1 i2] [o3 i4] [p2 i5]))
+          [_ _ w3 w4] (last-added-wires board2)
+          board3 (-> board2 (remove-pin p1))]
+      (wires-for-pin board3 p1) => (throws AssertionError)
+      (wires-for-pin board3 i1) => empty?
+      (wires-for-pin board3 i2) => empty?
+      (wires-for-pin board3 o3) => [w3]
+      (wires-for-pin board3 i4) => [w3]
+      (wires-for-pin board3 p2) => [w4]
+      (wires-for-pin board3 i5) => [w4]))
+
+  (fact
+    "should only accept gateless pin"
+    (let [board (-> (make-initial-board) (add-gates 1))
+          [i1 _ o3] (pins-for-gates board (last-added-gates board))]
+      (remove-pin board i1) => (throws AssertionError)
+      (remove-pin board o3) => (throws AssertionError))))

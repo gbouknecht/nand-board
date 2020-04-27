@@ -32,9 +32,13 @@
    :post [(every? (partial valid? ::board-spec/gate) %)]}
   (vals (:gates board)))
 
+(defn- pin-exists? [board pin]
+  (contains? (:pins board) (:id pin)))
+
 (defn gate-for-pin [board pin]
   {:pre  [(valid? ::board-spec/board board)
-          (valid? ::board-spec/pin pin)]
+          (valid? ::board-spec/pin pin)
+          (pin-exists? board pin)]
    :post [(valid? (s/nilable ::board-spec/gate) %)]}
   (let [gate-id (get-in board [:pins (:id pin) :gate-id])]
     (get-in board [:gates gate-id])))
@@ -69,17 +73,24 @@
   (:last-added-pins board))
 
 (defn input-pin? [board pin]
+  {:pre [(valid? ::board-spec/board board)
+         (valid? ::board-spec/pin pin)
+         (pin-exists? board pin)]}
   (let [gate (gate-for-pin board pin)]
     (contains? (:input-pin-ids gate) (:id pin))))
 
 (defn output-pin? [board pin]
+  {:pre [(valid? ::board-spec/board board)
+         (valid? ::board-spec/pin pin)
+         (pin-exists? board pin)]}
   (let [gate (gate-for-pin board pin)]
     (or (nil? gate)
         (= (:output-pin-id gate) (:id pin)))))
 
 (defn wires-for-pin [board pin]
   {:pre  [(valid? ::board-spec/board board)
-          (valid? ::board-spec/pin pin)]
+          (valid? ::board-spec/pin pin)
+          (pin-exists? board pin)]
    :post [(every? (partial valid? ::board-spec/wire) %)]}
   (let [wire-ids (get-in board [:pin-to-wires (:id pin)])]
     (map #(get-in board [:wires %]) wire-ids)))
@@ -185,6 +196,7 @@
 
 (defn remove-gate [board gate]
   {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/gate gate)
           (contains? (:gates board) (:id gate))]
    :post [(valid? ::board-spec/board %)]}
   (let [pins (pins-for-gates board [gate])
@@ -193,3 +205,14 @@
         (remove-wires wires)
         (update :gates dissoc (:id gate))
         (update :pins #(apply dissoc % (map :id pins))))))
+
+(defn remove-pin [board pin]
+  {:pre [(valid? ::board-spec/board board)
+         (valid? ::board-spec/pin pin)
+         (pin-exists? board pin)
+         (nil? (gate-for-pin board pin))]
+   :post [(valid? ::board-spec/board %)]}
+  (let [wires (wires-for-pin board pin)]
+    (-> board
+        (remove-wires wires)
+        (update :pins dissoc (:id pin)))))
