@@ -10,10 +10,13 @@
         [i1 i2 o3 i4 i5 o6] (pins-for-gates board1 [g1 g2])
         board2 (-> board1 (add-gates 1))
         [g3] (last-added-gates board2)
-        [i7 _ o9] (pins-for-gates board2 [g3])
+        [i7 i8 o9] (pins-for-gates board2 [g3])
         board3 (-> board2 (add-wires [o3 i4] [o3 i5] [o6 i1] [p1 i7]))
         [w1 w2 w3 w4] (last-added-wires board3)]
-    (gates board3) => [g1 g2 g3]
+    (pins board3) => (just [p1 p2 i1 i2 o3 i4 i5 o6 i7 i8 o9] :in-any-order)
+    (gateless-pins board3) => (just [p1 p2] :in-any-order)
+
+    (gates board3) => (just [g1 g2 g3] :in-any-order)
 
     (gate-for-pin board3 i1) => g1
     (gate-for-pin board3 i2) => g1
@@ -26,29 +29,29 @@
     (output-pin-for-gate board1 g1) => o3
     (output-pin-for-gate board1 g2) => o6
 
+    (input-pin? board1 p1) => false
     (input-pin? board1 i1) => true
     (input-pin? board1 i2) => true
     (input-pin? board1 o3) => false
-    (input-pin? board1 p1) => false
+    (output-pin? board1 p1) => true
     (output-pin? board1 i1) => false
     (output-pin? board1 i2) => false
     (output-pin? board1 o3) => true
-    (output-pin? board1 p1) => true
 
+    (wires-for-pin board3 p1) => [w4]
     (wires-for-pin board3 i1) => [w3]
     (wires-for-pin board3 i2) => empty?
     (wires-for-pin board3 o3) => (just [w1 w2] :in-any-order)
     (wires-for-pin board3 i4) => [w1]
     (wires-for-pin board3 i5) => [w2]
     (wires-for-pin board3 o6) => [w3]
-    (wires-for-pin board3 p1) => [w4]
 
+    (unwired? board3 p1) => false
+    (unwired? board3 p2) => true
     (unwired? board3 i1) => false
     (unwired? board3 i2) => true
     (unwired? board3 o3) => false
     (unwired? board3 o9) => true
-    (unwired? board3 p1) => false
-    (unwired? board3 p2) => true
 
     (:id (output-pin-for-wire board3 w1)) => (:id o3)
     (:id (input-pin-for-wire board3 w1)) => (:id i4)))

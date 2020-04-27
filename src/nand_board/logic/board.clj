@@ -67,6 +67,17 @@
    :post [(valid? ::board-spec/pin %)]}
   (get-in board [:pins (:output-pin-id gate)]))
 
+(defn pins [board]
+  {:pre  [(valid? ::board-spec/board board)]
+   :post [(every? (partial valid? ::board-spec/pin) %)]}
+  (vals (:pins board)))
+
+(defn gateless-pins [board]
+  {:pre  [(valid? ::board-spec/board board)]
+   :post [(every? (partial valid? ::board-spec/pin) %)]}
+  (let [gateless-pin? #(not (contains? % :gate-id))]
+    (filter gateless-pin? (pins board))))
+
 (defn last-added-pins [board]
   {:pre  [(valid? ::board-spec/board board)]
    :post [(every? (partial valid? ::board-spec/pin) %)]}
@@ -207,10 +218,10 @@
         (update :pins #(apply dissoc % (map :id pins))))))
 
 (defn remove-pin [board pin]
-  {:pre [(valid? ::board-spec/board board)
-         (valid? ::board-spec/pin pin)
-         (pin-exists? board pin)
-         (nil? (gate-for-pin board pin))]
+  {:pre  [(valid? ::board-spec/board board)
+          (valid? ::board-spec/pin pin)
+          (pin-exists? board pin)
+          (nil? (gate-for-pin board pin))]
    :post [(valid? ::board-spec/board %)]}
   (let [wires (wires-for-pin board pin)]
     (-> board
