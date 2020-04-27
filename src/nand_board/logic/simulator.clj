@@ -1,6 +1,7 @@
 (ns nand-board.logic.simulator
   (:require [clojure.spec.alpha :as s]
             [nand-board.logic.board :refer [gate-for-pin
+                                            gateless-pins
                                             gates
                                             input-pin-for-wire
                                             input-pin?
@@ -22,17 +23,17 @@
 (defn- nand [input-vals]
   (- 1 (apply * input-vals)))
 
-(defn- propagate-output [state gate]
+(defn- propagate-output [state output-pin]
   (let [board (:board state)
-        output-pin (output-pin-for-gate board gate)
         output-val (get-in state [:vals output-pin])
         wires (wires-for-pin board output-pin)
         make-event (fn [pin] {:time (+ (:time state) wire-delay) :pin pin :val output-val})
         events (map make-event (map (partial input-pin-for-wire board) wires))]
     (update state :event-queue add-events events)))
 
-(defn- propagate-inputs [state gate]
+(defn- propagate-input [state input-pin]
   (let [board (:board state)
+        gate (gate-for-pin board input-pin)
         input-pins (input-pins-for-gate board gate)
         input-vals (map #(get-in state [:vals %]) input-pins)]
     (if (some nil? input-vals)
@@ -42,11 +43,9 @@
                                             :val  (nand input-vals)}))))
 
 (defn- propagate [state pin]
-  (let [board (:board state)
-        gate (gate-for-pin board pin)]
-    (if (output-pin? board pin)
-      (propagate-output state gate)
-      (propagate-inputs state gate))))
+  (if (output-pin? (:board state) pin)
+    (propagate-output state pin)
+    (propagate-input state pin)))
 
 (defn- apply-event [state event]
   (let [state (update state :event-queue disj event)
@@ -70,13 +69,16 @@
 (defn make-initial-state [board]
   {:pre  [(valid? ::board-spec/board board)]
    :post [(valid? ::state-spec/state %)]}
-  (let [gates (gates board)
-        make-event (fn [pin] {:time 0 :pin pin :val 0})
-        events (->> gates
-                    (mapcat (partial input-pins-for-gate board))
-                    (filter (partial unwired? board))
-                    (map make-event))
-        event-queue (-> (make-event-queue) (add-events events))
+  (let [make-event (fn [pin] {:time 0 :pin pin :val 0})
+        gateless-pins-events (->> (gateless-pins board)
+                                  (map make-event))
+        gate-pins-events (->> (gates board)
+                              (mapcat (partial input-pins-for-gate board))
+                              (filter (partial unwired? board))
+                              (map make-event))
+        event-queue (-> (make-event-queue)
+                        (add-events gateless-pins-events)
+                        (add-events gate-pins-events))
         state {:time 0 :board board :vals {} :event-queue event-queue}]
     (-> state
         process-events)))
@@ -94,11 +96,12 @@
    :post [(valid? (s/nilable ::state-spec/val) %)]}
   (get-in state [:vals pin]))
 
-(defn set-val [state input-pin val]
+(defn set-val [state pin val]
   {:pre  [(valid? ::state-spec/state state)
-          (input-pin? (:board state) input-pin)
-          (unwired? (:board state) input-pin)]
+          (let [board (:board state)]
+            (or (and (input-pin? board pin) (unwired? board pin))
+                (some #{pin} (gateless-pins board))))]
    :post [(valid? ::state-spec/state %)]}
   (-> state
-      (update :event-queue add-event {:time (:time state) :pin input-pin :val val})
+      (update :event-queue add-event {:time (:time state) :pin pin :val val})
       process-events))
