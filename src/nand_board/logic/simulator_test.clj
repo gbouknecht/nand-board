@@ -152,3 +152,26 @@
         state2 (-> state1 (set-val p1 1) ticks last)]
     (get-vals state1) => {p1 0 i1 0 i2 0 o3 1}
     (get-vals state2) => {p1 1 i1 1 i2 1 o3 0}))
+
+(fact
+  "half adder can be simulated"
+  (let [board1 (-> (make-initial-board) (add-pins 2) (add-gates 5))
+        [a b] (last-added-pins board1)
+        [g1 g2 g3 g4 g5] (last-added-gates board1)
+        [i1 i2 o3] (pins-for-gates board1 [g1])
+        [i4 i5 o6] (pins-for-gates board1 [g2])
+        [i7 i8 o9] (pins-for-gates board1 [g3])
+        [i10 i11 s] (pins-for-gates board1 [g4])
+        [i13 i14 c] (pins-for-gates board1 [g5])
+        board2 (-> board1 (add-wires
+                            [a i1] [a i4]
+                            [b i2] [b i8]
+                            [o3 i5] [o3 i7] [o3 i13] [o3 i14]
+                            [o6 i10] [o9 i11]))
+        add (fn [x y]
+              (let [state (-> (make-initial-state board2) (set-val a x) (set-val b y) ticks last)]
+                [(get-val state s) (get-val state c)]))]
+    (add 0 0) => [0 0]
+    (add 1 0) => [1 0]
+    (add 0 1) => [1 0]
+    (add 1 1) => [0 1]))
