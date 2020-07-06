@@ -1,7 +1,5 @@
 (ns nand-board.core
-  (:gen-class))
+  (:require [nand-board.ui.ui-core :as ui-core]))
 
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))
+(defn -main [& _]
+  (ui-core/start))
