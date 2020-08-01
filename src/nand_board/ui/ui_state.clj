@@ -10,7 +10,7 @@
   (assoc ui-state :time-ms time-ms))
 
 (defn add-click-event [ui-state event]
-  (update ui-state :timed-click-events (fnil conj []) {:event event :time-ms (:time-ms ui-state)}))
+  (update ui-state :timed-click-events conj {:event event :time-ms (:time-ms ui-state)}))
 
 (defn- exceeds-double-click-delay? [m1 m2]
   (> (- (:time-ms m2) (:time-ms m1)) max-double-click-delay-ms))
