@@ -1,10 +1,12 @@
-(ns nand-board.ui.ui-state)
+(ns nand-board.ui.ui-state
+  (:require [nand-board.ui.gate-view :refer [->GateView]]))
 
 (def ^:private max-double-click-delay-ms 500)
 
 (defn make-initial-ui-state [time-ms]
   {:time-ms time-ms
-   :timed-click-events []})
+   :timed-click-events []
+   :gate-views []})
 
 (defn update-time-ms [ui-state time-ms]
   (assoc ui-state :time-ms time-ms))
@@ -43,3 +45,9 @@
 (defn process-events [ui-state]
   (-> ui-state
       process-click-events))
+
+(defn gate-views [ui-state]
+  (:gate-views ui-state))
+
+(defn add-gate [ui-state center]
+  (update ui-state :gate-views conj (->GateView center)))

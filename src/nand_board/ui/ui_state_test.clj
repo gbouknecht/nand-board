@@ -85,3 +85,8 @@
                      process-events)]
     (double-click-event ui-state) => event
     (double-click-event (process-events ui-state)) => nil))
+
+(fact
+  "add-gate should add a gate on the specified coordinates"
+  (let [ui-state (-> (make-initial-ui-state 1000) (add-gate [2 3]) (add-gate [4 5]))]
+    (map :center (gate-views ui-state)) => [[2 3] [4 5]]))
