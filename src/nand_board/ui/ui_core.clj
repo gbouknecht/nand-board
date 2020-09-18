@@ -1,6 +1,6 @@
 (ns nand-board.ui.ui-core
   (:require [nand-board.ui.drawable :refer [draw]]
-            [nand-board.ui.ui-state :refer [add-gate
+            [nand-board.ui.ui-state :refer [add-gate-view
                                             add-click-event
                                             double-click-event
                                             gate-views
@@ -19,7 +19,7 @@
 
 (defn- handle-double-click-event [ui-state]
   (if-let [event (double-click-event ui-state)]
-    (add-gate ui-state [(:x event) (:y event)])
+    (add-gate-view ui-state [(:x event) (:y event)])
     ui-state))
 
 (defn- update-ui-state [ui-state]
@@ -31,7 +31,7 @@
 (defn- draw-ui-state [ui-state]
   (q/background 255)
   (doseq [gate-view (gate-views ui-state)]
-    (draw gate-view)))
+    (draw gate-view ui-state)))
 
 (defn- mouse-clicked [ui-state event]
   (add-click-event ui-state event))

@@ -1,5 +1,6 @@
 (ns nand-board.ui.ui-state-test
   (:require [midje.sweet :refer [=> fact]]
+            [nand-board.logic.board :refer [gates]]
             [nand-board.ui.ui-state :refer :all]))
 
 (fact
@@ -88,5 +89,8 @@
 
 (fact
   "add-gate should add a gate on the specified coordinates"
-  (let [ui-state (-> (make-initial-ui-state 1000) (add-gate [2 3]) (add-gate [4 5]))]
-    (map :center (gate-views ui-state)) => [[2 3] [4 5]]))
+  (let [ui-state (-> (make-initial-ui-state 1000) (add-gate-view [2 3]) (add-gate-view [4 5]))
+        gate-views (gate-views ui-state)
+        gates (gates (:board (:state ui-state)))]
+    (map :gate gate-views) => gates
+    (map :center gate-views) => [[2 3] [4 5]]))

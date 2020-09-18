@@ -1,4 +1,4 @@
 (ns nand-board.ui.drawable)
 
 (defprotocol Drawable
-  (draw [this]))
+  (draw [this ui-state]))

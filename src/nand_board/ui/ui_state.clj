@@ -1,12 +1,17 @@
 (ns nand-board.ui.ui-state
-  (:require [nand-board.ui.gate-view :refer [->GateView]]))
+  (:require [nand-board.logic.board :refer [add-gates
+                                            last-added-gates
+                                            make-initial-board]]
+            [nand-board.logic.simulator :refer [make-initial-state]]
+            [nand-board.ui.gate-view :refer [->GateView]]))
 
 (def ^:private max-double-click-delay-ms 500)
 
 (defn make-initial-ui-state [time-ms]
-  {:time-ms time-ms
+  {:time-ms            time-ms
    :timed-click-events []
-   :gate-views []})
+   :gate-views         []
+   :state              (make-initial-state (make-initial-board))})
 
 (defn update-time-ms [ui-state time-ms]
   (assoc ui-state :time-ms time-ms))
@@ -49,5 +54,11 @@
 (defn gate-views [ui-state]
   (:gate-views ui-state))
 
-(defn add-gate [ui-state center]
-  (update ui-state :gate-views conj (->GateView center)))
+(defn add-gate-view [ui-state center]
+  (let [state (:state ui-state)
+        board (add-gates (:board state) 1)
+        [gate] (last-added-gates board)
+        new-state (make-initial-state board)]
+    (-> ui-state
+        (update :gate-views conj (->GateView gate center))
+        (assoc :state new-state))))
