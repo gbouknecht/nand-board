@@ -2,11 +2,8 @@
   (:require [nand-board.ui.drawable :refer [draw]]
             [nand-board.ui.ui-state :refer [add-gate-view
                                             add-click-event
-                                            double-click-event
                                             gate-views
                                             make-initial-ui-state
-                                            process-events
-                                            single-click-event
                                             update-time-ms]]
             [quil.core :as q]
             [quil.middleware :as m]))
@@ -14,19 +11,16 @@
 (defn- time-ms []
   (System/currentTimeMillis))
 
-(defn- setup-ui-state []
-  (make-initial-ui-state (time-ms)))
+(defn- double-clicked [ui-state event]
+  (add-gate-view ui-state [(:x event) (:y event)]))
 
-(defn- handle-double-click-event [ui-state]
-  (if-let [event (double-click-event ui-state)]
-    (add-gate-view ui-state [(:x event) (:y event)])
-    ui-state))
+(defn- setup-ui-state []
+  (make-initial-ui-state
+    (time-ms)
+    :double-clicked double-clicked))
 
 (defn- update-ui-state [ui-state]
-  (-> ui-state
-      (update-time-ms (time-ms))
-      process-events
-      handle-double-click-event))
+  (update-time-ms ui-state (time-ms)))
 
 (defn- draw-ui-state [ui-state]
   (q/background 255)

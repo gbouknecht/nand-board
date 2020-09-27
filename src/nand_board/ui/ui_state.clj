@@ -7,17 +7,16 @@
 
 (def ^:private max-double-click-delay-ms 500)
 
-(defn make-initial-ui-state [time-ms]
+(defn make-initial-ui-state
+  "callbacks:
+   - `:single-clicked` called in case of a single click event
+   - `:double-clicked` called in case of a double click event"
+  [time-ms & callbacks]
   {:time-ms            time-ms
    :timed-click-events []
    :gate-views         []
-   :state              (make-initial-state (make-initial-board))})
-
-(defn update-time-ms [ui-state time-ms]
-  (assoc ui-state :time-ms time-ms))
-
-(defn add-click-event [ui-state event]
-  (update ui-state :timed-click-events conj {:event event :time-ms (:time-ms ui-state)}))
+   :state              (make-initial-state (make-initial-board))
+   :callbacks          (apply hash-map callbacks)})
 
 (defn- exceeds-double-click-delay? [m1 m2]
   (> (- (:time-ms m2) (:time-ms m1)) max-double-click-delay-ms))
@@ -30,25 +29,28 @@
       (and event1 event2 (not (exceeds-double-click-delay? event1 event2))) 2
       :else 0)))
 
+(defn- call [callback-key ui-state & args]
+  (if-let [callback (-> ui-state :callbacks callback-key)]
+    (apply callback ui-state args)
+    ui-state))
+
 (defn- process-click-events [ui-state]
   (let [click-count (click-count ui-state)
-        [timed-click-event] (:timed-click-events ui-state)
-        ui-state (-> ui-state
-                     (dissoc :single-click-event :double-click-event)
-                     (assoc :timed-click-events (subvec (:timed-click-events ui-state) click-count)))]
+        click-event (-> ui-state :timed-click-events first :event)
+        ui-state (update ui-state :timed-click-events subvec click-count)]
     (case click-count
       0 ui-state
-      1 (assoc ui-state :single-click-event (:event timed-click-event))
-      2 (assoc ui-state :double-click-event (:event timed-click-event)))))
+      1 (call :single-clicked ui-state click-event)
+      2 (call :double-clicked ui-state click-event))))
 
-(defn single-click-event [ui-state]
-  (:single-click-event ui-state))
-
-(defn double-click-event [ui-state]
-  (:double-click-event ui-state))
-
-(defn process-events [ui-state]
+(defn update-time-ms [ui-state time-ms]
   (-> ui-state
+      (assoc :time-ms time-ms)
+      process-click-events))
+
+(defn add-click-event [ui-state event]
+  (-> ui-state
+      (update :timed-click-events conj {:time-ms (:time-ms ui-state) :event event})
       process-click-events))
 
 (defn gate-views [ui-state]
