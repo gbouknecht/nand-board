@@ -10,8 +10,12 @@
   (update ui-state :double-clicked-calls (fnil conj []) event))
 
 (fact
+  "initial ui-state should set time-ms to 0 by default"
+  (:time-ms (make-initial-ui-state)) => 0)
+
+(fact
   "initial ui-state should not have recognized any click events"
-  (let [ui-state (-> (make-initial-ui-state 1000
+  (let [ui-state (-> (make-initial-ui-state :time-ms 1000
                                             :single-clicked single-clicked-called
                                             :double-clicked double-clicked-called))]
     (:single-clicked-calls ui-state) => nil
@@ -20,7 +24,8 @@
 (fact
   "should recognize single click event"
   (let [event {:x 2 :y 3}
-        ui-state-1000 (-> (make-initial-ui-state 1000 :single-clicked single-clicked-called)
+        ui-state-1000 (-> (make-initial-ui-state :time-ms 1000
+                                                 :single-clicked single-clicked-called)
                           (add-click-event event))
         ui-state-1499 (-> ui-state-1000 (update-time-ms 1499))
         ui-state-1500 (-> ui-state-1000 (update-time-ms 1500))
@@ -34,7 +39,8 @@
   "should recognize two single click events right after each other"
   (let [event1 {:x 2 :y 3}
         event2 {:x 4 :y 5}
-        ui-state (-> (make-initial-ui-state 1000 :single-clicked single-clicked-called)
+        ui-state (-> (make-initial-ui-state :time-ms 1000
+                                            :single-clicked single-clicked-called)
                      (add-click-event event1)
                      (update-time-ms 1501) (add-click-event event2)
                      (update-time-ms 2002))]
@@ -43,7 +49,8 @@
 (fact
   "should recognize single click event only once"
   (let [event {:x 2 :y 3}
-        ui-state (-> (make-initial-ui-state 1000 :single-clicked single-clicked-called)
+        ui-state (-> (make-initial-ui-state :time-ms 1000
+                                            :single-clicked single-clicked-called)
                      (add-click-event event)
                      (update-time-ms 2002))]
     (:single-clicked-calls ui-state) => [event]))
@@ -51,7 +58,8 @@
 (fact
   "double click event should not be recognized as single click event"
   (let [event {:x 2 :y 3}
-        ui-state (-> (make-initial-ui-state 1000 :single-clicked single-clicked-called)
+        ui-state (-> (make-initial-ui-state :time-ms 1000
+                                            :single-clicked single-clicked-called)
                      (add-click-event event)
                      (update-time-ms 1100) (add-click-event event)
                      (update-time-ms 1501))]
@@ -60,7 +68,8 @@
 (fact
   "should recognize double click event"
   (let [event {:x 2 :y 3}
-        ui-state-1000 (-> (make-initial-ui-state 1000 :double-clicked double-clicked-called)
+        ui-state-1000 (-> (make-initial-ui-state :time-ms 1000
+                                                 :double-clicked double-clicked-called)
                           (add-click-event event))
         ui-state-1001 (-> ui-state-1000 (update-time-ms 1001) (add-click-event event))
         ui-state-1499 (-> ui-state-1000 (update-time-ms 1499) (add-click-event event))
@@ -76,7 +85,8 @@
   "should recognize two double click events right after each other"
   (let [event1 {:x 2 :y 3}
         event2 {:x 4 :y 5}
-        ui-state-1 (-> (make-initial-ui-state 1000 :double-clicked double-clicked-called)
+        ui-state-1 (-> (make-initial-ui-state :time-ms 1000
+                                              :double-clicked double-clicked-called)
                        (add-click-event event1)
                        (update-time-ms 1100) (add-click-event event1)
                        (update-time-ms 1200) (add-click-event event2)
@@ -86,7 +96,8 @@
 (fact
   "should recognize double click event only once"
   (let [event {:x 2 :y 3}
-        ui-state (-> (make-initial-ui-state 1000 :double-clicked double-clicked-called)
+        ui-state (-> (make-initial-ui-state :time-ms 1000
+                                            :double-clicked double-clicked-called)
                      (add-click-event event)
                      (update-time-ms 1100) (add-click-event event)
                      (update-time-ms 1200))]
@@ -94,7 +105,7 @@
 
 (fact
   "add-gate should add a gate on the specified coordinates"
-  (let [ui-state (-> (make-initial-ui-state 1000) (add-gate-view [2 3]) (add-gate-view [4 5]))
+  (let [ui-state (-> (make-initial-ui-state :time-ms 1000) (add-gate-view [2 3]) (add-gate-view [4 5]))
         gate-views (gate-views ui-state)
         gates (gates (:board (:state ui-state)))]
     (map :gate gate-views) => gates

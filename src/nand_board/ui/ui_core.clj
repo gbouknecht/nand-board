@@ -16,7 +16,7 @@
 
 (defn- setup-ui-state []
   (make-initial-ui-state
-    (time-ms)
+    :time-ms (time-ms)
     :double-clicked double-clicked))
 
 (defn- update-ui-state [ui-state]

@@ -8,15 +8,17 @@
 (def ^:private max-double-click-delay-ms 500)
 
 (defn make-initial-ui-state
-  "callbacks:
+  "options:
+   - `:time-ms`        current time in milliseconds
    - `:single-clicked` called in case of a single click event
    - `:double-clicked` called in case of a double click event"
-  [time-ms & callbacks]
-  {:time-ms            time-ms
-   :timed-click-events []
-   :gate-views         []
-   :state              (make-initial-state (make-initial-board))
-   :callbacks          (apply hash-map callbacks)})
+  [& options]
+  (let [options (apply hash-map options)]
+    {:time-ms            (or (:time-ms options) 0)
+     :timed-click-events []
+     :gate-views         []
+     :state              (make-initial-state (make-initial-board))
+     :options            options}))
 
 (defn- exceeds-double-click-delay? [m1 m2]
   (> (- (:time-ms m2) (:time-ms m1)) max-double-click-delay-ms))
@@ -30,7 +32,7 @@
       :else 0)))
 
 (defn- call [callback-key ui-state & args]
-  (if-let [callback (-> ui-state :callbacks callback-key)]
+  (if-let [callback (-> ui-state :options callback-key)]
     (apply callback ui-state args)
     ui-state))
 
