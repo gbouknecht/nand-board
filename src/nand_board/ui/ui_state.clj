@@ -2,19 +2,24 @@
   (:require [nand-board.logic.board :refer [add-gates
                                             last-added-gates
                                             make-initial-board]]
-            [nand-board.logic.simulator :refer [make-initial-state]]
+            [nand-board.logic.simulator :refer [make-initial-state
+                                                tick]]
             [nand-board.ui.gate-view :refer [->GateView]]))
 
 (def ^:private max-double-click-delay-ms 500)
 
 (defn make-initial-ui-state
   "options:
-   - `:time-ms`        current time in milliseconds
-   - `:single-clicked` called in case of a single click event
-   - `:double-clicked` called in case of a double click event"
+   - `:time-ms`          current time in milliseconds
+   - `:tick-interval-ms` interval in milliseconds between state ticks
+   - `:single-clicked`   called in case of a single click event
+   - `:double-clicked`   called in case of a double click event"
   [& options]
-  (let [options (apply hash-map options)]
-    {:time-ms            (or (:time-ms options) 0)
+  (let [options (apply hash-map options)
+        time-ms (or (:time-ms options) 0)]
+    {:time-ms            time-ms
+     :last-tick-time-ms  time-ms
+     :tick-interval-ms   (or (:tick-interval-ms options) 1000)
      :timed-click-events []
      :gate-views         []
      :state              (make-initial-state (make-initial-board))
@@ -45,10 +50,19 @@
       1 (call :single-clicked ui-state click-event)
       2 (call :double-clicked ui-state click-event))))
 
+(defn- tick-state-at-interval [ui-state]
+  (let [delta-time-ms (- (:time-ms ui-state) (:last-tick-time-ms ui-state))
+        tick-count (quot delta-time-ms (:tick-interval-ms ui-state))
+        ticks #(nth (iterate tick %) tick-count)]
+    (-> ui-state
+        (update :state ticks)
+        (update :last-tick-time-ms + (* tick-count (:tick-interval-ms ui-state))))))
+
 (defn update-time-ms [ui-state time-ms]
   (-> ui-state
       (assoc :time-ms time-ms)
-      process-click-events))
+      process-click-events
+      tick-state-at-interval))
 
 (defn add-click-event [ui-state event]
   (-> ui-state

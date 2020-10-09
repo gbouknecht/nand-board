@@ -1,6 +1,8 @@
 (ns nand-board.ui.ui-state-test
   (:require [midje.sweet :refer [=> fact]]
-            [nand-board.logic.board :refer [gates]]
+            [nand-board.logic.board :refer [gates
+                                            output-pin-for-gate]]
+            [nand-board.logic.simulator :refer [get-val]]
             [nand-board.ui.ui-state :refer :all]))
 
 (defn single-clicked-called [ui-state event]
@@ -10,8 +12,11 @@
   (update ui-state :double-clicked-calls (fnil conj []) event))
 
 (fact
-  "initial ui-state should set time-ms to 0 by default"
-  (:time-ms (make-initial-ui-state)) => 0)
+  "initial ui-state should have defaults
+   - time-ms: 0
+   - tick-interval-ms: 1000"
+  (:time-ms (make-initial-ui-state)) => 0
+  (:tick-interval-ms (make-initial-ui-state)) => 1000)
 
 (fact
   "initial ui-state should not have recognized any click events"
@@ -110,3 +115,12 @@
         gates (gates (:board (:state ui-state)))]
     (map :gate gate-views) => gates
     (map :center gate-views) => [[2 3] [4 5]]))
+
+(fact
+  "should tick state at specified rate"
+  (let [ui-state (-> (make-initial-ui-state :time-ms 1000 :tick-interval-ms 250) (add-gate-view [2 3]))
+        [gate] (map :gate (gate-views ui-state))
+        get-val-output-pin (fn [{:keys [state]} gate] (get-val state (output-pin-for-gate (:board state) gate)))]
+    (get-val-output-pin ui-state gate) => nil
+    (get-val-output-pin (update-time-ms ui-state 1499) gate) => nil
+    (get-val-output-pin (update-time-ms ui-state 1500) gate) => 1))
