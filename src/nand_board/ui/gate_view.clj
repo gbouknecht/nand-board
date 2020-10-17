@@ -1,11 +1,11 @@
 (ns nand-board.ui.gate-view
   (:require [nand-board.logic.board :refer [pins-for-gates]]
             [nand-board.logic.simulator :refer [get-val]]
-            [nand-board.ui.drawable :refer [Drawable]]
+            [nand-board.ui.view :refer [View]]
             [quil.core :as q]))
 
 (defrecord GateView [gate center]
-  Drawable
+  View
   (draw [_ ui-state]
     (let [state (:state ui-state)
           board (:board state)

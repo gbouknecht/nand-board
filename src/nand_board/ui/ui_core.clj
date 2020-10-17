@@ -1,5 +1,5 @@
 (ns nand-board.ui.ui-core
-  (:require [nand-board.ui.drawable :refer [draw]]
+  (:require [nand-board.ui.view :refer [draw]]
             [nand-board.ui.ui-state :refer [add-gate-view
                                             add-click-event
                                             gate-views
