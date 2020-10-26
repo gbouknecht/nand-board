@@ -1,7 +1,8 @@
 (ns nand-board.ui.gate-view
   (:require [nand-board.logic.board :refer [pins-for-gates]]
             [nand-board.logic.simulator :refer [get-val]]
-            [nand-board.ui.view :refer [View]]
+            [nand-board.ui.view :refer [bounds
+                                        View]]
             [quil.core :as q]))
 
 (def ^:private size 50)
@@ -58,4 +59,13 @@
           top (- y half-size (/ weight 2))
           width (+ wire-length size wire-length)
           height (+ size weight)]
-      [left top width height])))
+      [left top width height]))
+  (overlaps? [this that]
+    (let [[this-x0 this-y0 this-width this-height] (bounds this)
+          [this-x1 this-y1] [(+ this-x0 this-width) (+ this-y0 this-height)]
+          [that-x0 that-y0 that-width that-height] (bounds that)
+          [that-x1 that-y1] [(+ that-x0 that-width) (+ that-y0 that-height)]]
+      (and (or (<= that-x0 this-x0 that-x1)
+               (<= that-x0 this-x1 that-x1))
+           (or (<= that-y0 this-y0 that-y1)
+               (<= that-y0 this-y1 that-y1))))))
