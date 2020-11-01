@@ -109,16 +109,24 @@
     (:double-clicked-calls ui-state) => [event]))
 
 (fact
-  "add-gate should add a gate on the specified coordinates"
-  (let [ui-state (-> (make-initial-ui-state :time-ms 1000) (add-gate-view [2 3]) (add-gate-view [4 5]))
+  "add-gate-view-if-no-overlaps should add a gate on the specified coordinates"
+  (let [ui-state (-> (make-initial-ui-state :time-ms 1000) (add-gate-view-if-no-overlaps [200 300]) (add-gate-view-if-no-overlaps [400 500]))
         gate-views (gate-views ui-state)
         gates (gates (:board (:state ui-state)))]
     (map :gate gate-views) => gates
-    (map :center gate-views) => [[2 3] [4 5]]))
+    (map :center gate-views) => [[200 300] [400 500]]))
+
+(fact
+  "add-gate-view-if-no-overlaps should not add a gate if it overlaps another gate"
+  (let [ui-state (-> (make-initial-ui-state :time-ms 1000) (add-gate-view-if-no-overlaps [200 300]) (add-gate-view-if-no-overlaps [250 350]))
+        gate-views (gate-views ui-state)
+        gates (gates (:board (:state ui-state)))]
+    (map :gate gate-views) => gates
+    (map :center gate-views) => [[200 300]]))
 
 (fact
   "should tick state at specified rate"
-  (let [ui-state (-> (make-initial-ui-state :time-ms 1000 :tick-interval-ms 250) (add-gate-view [2 3]))
+  (let [ui-state (-> (make-initial-ui-state :time-ms 1000 :tick-interval-ms 250) (add-gate-view-if-no-overlaps [200 300]))
         [gate] (map :gate (gate-views ui-state))
         get-val-output-pin (fn [{:keys [state]} gate] (get-val state (output-pin-for-gate (:board state) gate)))]
     (get-val-output-pin ui-state gate) => nil

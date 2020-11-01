@@ -4,7 +4,8 @@
                                             make-initial-board]]
             [nand-board.logic.simulator :refer [make-initial-state
                                                 tick]]
-            [nand-board.ui.gate-view :refer [->GateView]]))
+            [nand-board.ui.gate-view :refer [->GateView]]
+            [nand-board.ui.view :refer [overlaps?]]))
 
 (def ^:private max-double-click-delay-ms 500)
 
@@ -72,11 +73,13 @@
 (defn gate-views [ui-state]
   (:gate-views ui-state))
 
-(defn add-gate-view [ui-state center]
-  (let [state (:state ui-state)
-        board (add-gates (:board state) 1)
-        [gate] (last-added-gates board)
-        new-state (make-initial-state board)]
-    (-> ui-state
-        (update :gate-views conj (->GateView gate center))
-        (assoc :state new-state))))
+(defn add-gate-view-if-no-overlaps [ui-state center]
+  (let [new-board (add-gates (-> ui-state :state :board) 1)
+        new-state (make-initial-state new-board)
+        [gate] (last-added-gates new-board)
+        gate-view (->GateView gate center)]
+    (if (some (partial overlaps? gate-view) (gate-views ui-state))
+      ui-state
+      (-> ui-state
+          (update :gate-views conj gate-view)
+          (assoc :state new-state)))))

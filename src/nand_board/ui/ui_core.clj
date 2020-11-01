@@ -1,6 +1,6 @@
 (ns nand-board.ui.ui-core
   (:require [nand-board.ui.view :refer [draw]]
-            [nand-board.ui.ui-state :refer [add-gate-view
+            [nand-board.ui.ui-state :refer [add-gate-view-if-no-overlaps
                                             add-click-event
                                             gate-views
                                             make-initial-ui-state
@@ -12,7 +12,7 @@
   (System/currentTimeMillis))
 
 (defn- double-clicked [ui-state event]
-  (add-gate-view ui-state [(:x event) (:y event)]))
+  (add-gate-view-if-no-overlaps ui-state [(:x event) (:y event)]))
 
 (defn- setup-ui-state []
   (make-initial-ui-state
