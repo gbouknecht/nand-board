@@ -8,8 +8,10 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [quil "3.1.0"]]
   :main ^:skip-aot nand-board.core
+  :test-paths ["src"]
+  :test-selectors {:default [(fn [ns] (.endsWith (str ns) "-test"))
+                             (constantly true)]}
   :target-path "target/%s"
-  :profiles {:uberjar {:aot [nand-board.core]}
-             :dev     {:dependencies [[midje "1.9.9"]]}}
+  :profiles {:uberjar {:aot [nand-board.core]}}
   :jar-exclusions ~[test-file-pattern]
   :uberjar-exclusions ~[test-file-pattern])

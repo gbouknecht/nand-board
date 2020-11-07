@@ -1,9 +1,14 @@
 (ns nand-board.logic.board-test
-  (:require [midje.sweet :refer [=> =not=> contains just fact facts throws]]
+  (:require [clojure.test :refer :all]
             [nand-board.logic.board :refer :all]))
 
-(facts
-  "retrieval"
+(declare thrown?)
+
+(defn set= [coll1 coll2]
+  (= (set coll1) (set coll2)))
+
+(deftest about-retrieval
+
   (let [board1 (-> (make-initial-board) (add-pins 2) (add-gates 2))
         [p1 p2] (last-added-pins board1)
         [g1 g2] (last-added-gates board1)
@@ -13,53 +18,52 @@
         [i7 i8 o9] (pins-for-gates board2 [g3])
         board3 (-> board2 (add-wires [o3 i4] [o3 i5] [o6 i1] [p1 i7]))
         [w1 w2 w3 w4] (last-added-wires board3)]
-    (pins board3) => (just [p1 p2 i1 i2 o3 i4 i5 o6 i7 i8 o9] :in-any-order)
-    (gateless-pins board3) => (just [p1 p2] :in-any-order)
+    (is (set= (pins board3) [p1 p2 i1 i2 o3 i4 i5 o6 i7 i8 o9]))
+    (is (set= (gateless-pins board3) [p1 p2]))
 
-    (gates board3) => (just [g1 g2 g3] :in-any-order)
+    (is (set= (gates board3) [g1 g2 g3]))
 
-    (gate-for-pin board3 i1) => g1
-    (gate-for-pin board3 i2) => g1
-    (gate-for-pin board3 o3) => g1
-    (gate-for-pin board3 i4) => g2
-    (gate-for-pin board3 p1) => nil?
+    (is (= (gate-for-pin board3 i1) g1))
+    (is (= (gate-for-pin board3 i2) g1))
+    (is (= (gate-for-pin board3 o3) g1))
+    (is (= (gate-for-pin board3 i4) g2))
+    (is (nil? (gate-for-pin board3 p1)))
 
-    (input-pins-for-gate board1 g1) => [i1 i2]
-    (input-pins-for-gate board1 g2) => [i4 i5]
-    (output-pin-for-gate board1 g1) => o3
-    (output-pin-for-gate board1 g2) => o6
+    (is (= (input-pins-for-gate board1 g1) [i1 i2]))
+    (is (= (input-pins-for-gate board1 g2) [i4 i5]))
+    (is (= (output-pin-for-gate board1 g1) o3))
+    (is (= (output-pin-for-gate board1 g2) o6))
 
-    (input-pin? board1 p1) => false
-    (input-pin? board1 i1) => true
-    (input-pin? board1 i2) => true
-    (input-pin? board1 o3) => false
-    (output-pin? board1 p1) => true
-    (output-pin? board1 i1) => false
-    (output-pin? board1 i2) => false
-    (output-pin? board1 o3) => true
+    (is (not (input-pin? board1 p1)))
+    (is (input-pin? board1 i1))
+    (is (input-pin? board1 i2))
+    (is (not (input-pin? board1 o3)))
+    (is (output-pin? board1 p1))
+    (is (not (output-pin? board1 i1)))
+    (is (not (output-pin? board1 i2)))
+    (is (output-pin? board1 o3))
 
-    (wires-for-pin board3 p1) => [w4]
-    (wires-for-pin board3 i1) => [w3]
-    (wires-for-pin board3 i2) => empty?
-    (wires-for-pin board3 o3) => (just [w1 w2] :in-any-order)
-    (wires-for-pin board3 i4) => [w1]
-    (wires-for-pin board3 i5) => [w2]
-    (wires-for-pin board3 o6) => [w3]
+    (is (= (wires-for-pin board3 p1) [w4]))
+    (is (= (wires-for-pin board3 i1) [w3]))
+    (is (empty? (wires-for-pin board3 i2)))
+    (is (set= (wires-for-pin board3 o3) [w1 w2]))
+    (is (= (wires-for-pin board3 i4) [w1]))
+    (is (= (wires-for-pin board3 i5) [w2]))
+    (is (= (wires-for-pin board3 o6) [w3]))
 
-    (unwired? board3 p1) => false
-    (unwired? board3 p2) => true
-    (unwired? board3 i1) => false
-    (unwired? board3 i2) => true
-    (unwired? board3 o3) => false
-    (unwired? board3 o9) => true
+    (is (not (unwired? board3 p1)))
+    (is (unwired? board3 p2))
+    (is (not (unwired? board3 i1)))
+    (is (unwired? board3 i2))
+    (is (not (unwired? board3 o3)))
+    (is (unwired? board3 o9))
 
-    (:id (output-pin-for-wire board3 w1)) => (:id o3)
-    (:id (input-pin-for-wire board3 w1)) => (:id i4)))
+    (is (= (:id (output-pin-for-wire board3 w1)) (:id o3)))
+    (is (= (:id (input-pin-for-wire board3 w1)) (:id i4)))))
 
-(facts
-  "add-gates"
+(deftest about-adding-gates
 
-  (fact
+  (testing
     "should add new gates and pins, no wires"
     (let [board1 (-> (make-initial-board) (add-gates 1))
           [g1] (last-added-gates board1)
@@ -67,31 +71,29 @@
           board2 (-> board1 (add-gates 2))
           [g2 g3] (last-added-gates board2)
           [i4 i5 o6 i7 i8 o9] (pins-for-gates board2 [g2 g3])]
-      (input-pins-for-gate board2 g1) => [i1 i2]
-      (output-pin-for-gate board2 g1) => o3
-      (input-pins-for-gate board2 g2) => [i4 i5]
-      (output-pin-for-gate board2 g2) => o6
-      (input-pins-for-gate board2 g3) => [i7 i8]
-      (output-pin-for-gate board2 g3) => o9
-      (mapcat #(wires-for-pin board2 %) [i1 i2 o3 i4 i5 o6 i7 i8 o9]) => empty?)))
+      (is (= (input-pins-for-gate board2 g1) [i1 i2]))
+      (is (= (output-pin-for-gate board2 g1) o3))
+      (is (= (input-pins-for-gate board2 g2) [i4 i5]))
+      (is (= (output-pin-for-gate board2 g2) o6))
+      (is (= (input-pins-for-gate board2 g3) [i7 i8]))
+      (is (= (output-pin-for-gate board2 g3) o9))
+      (is (empty? (mapcat #(wires-for-pin board2 %) [i1 i2 o3 i4 i5 o6 i7 i8 o9]))))))
 
-(facts
-  "add-pins"
+(deftest about-adding-pins
 
-  (fact
+  (testing
     "should add new gateless pins, no wires"
     (let [board1 (-> (make-initial-board) (add-pins 1))
           [p1] (last-added-pins board1)
           board2 (-> board1 (add-pins 2))
           [p2 p3] (last-added-pins board2)]
-      (map keys [p1 p2 p3]) => [[:id] [:id] [:id]]
-      (count (set [p1 p2 p3])) => 3
-      (mapcat #(wires-for-pin board2 %) [p1 p2 p3]) => empty?)))
+      (is (= (map keys [p1 p2 p3]) [[:id] [:id] [:id]]))
+      (is (= (count (set [p1 p2 p3])) 3))
+      (is (empty? (mapcat #(wires-for-pin board2 %) [p1 p2 p3]))))))
 
-(facts
-  "add-wires"
+(deftest about-adding-wires
 
-  (fact
+  (testing
     "should add wires between pins"
     (let [board1 (-> (make-initial-board) (add-pins 2) (add-gates 3))
           [p1 p2] (last-added-pins board1)
@@ -100,28 +102,27 @@
           [w1 w2 w3] (last-added-wires board2)
           board3 (-> board2 (add-wires [o3 i7] [p2 i4] [p2 i8]))
           [w4 w5 w6] (last-added-wires board3)]
-      (wires-for-pin board3 p1) => [w1]
-      (wires-for-pin board3 p2) => (just [w5 w6] :in-any-order)
-      (wires-for-pin board3 i1) => [w3]
-      (wires-for-pin board3 o3) => (just [w2 w3 w4] :in-any-order)
-      (wires-for-pin board3 i5) => [w2]
-      (wires-for-pin board3 i7) => [w4]
-      (:id (output-pin-for-wire board3 w2)) => (:id o3)
-      (:id (input-pin-for-wire board3 w2)) => (:id i5)))
+      (is (= (wires-for-pin board3 p1) [w1]))
+      (is (set= (wires-for-pin board3 p2) [w5 w6]))
+      (is (= (wires-for-pin board3 i1) [w3]))
+      (is (set= (wires-for-pin board3 o3) [w2 w3 w4]))
+      (is (= (wires-for-pin board3 i5) [w2]))
+      (is (= (wires-for-pin board3 i7) [w4]))
+      (is (= (:id (output-pin-for-wire board3 w2)) (:id o3)))
+      (is (= (:id (input-pin-for-wire board3 w2)) (:id i5)))))
 
-  (fact
+  (testing
     "should only accept an 'output' pin and an 'input' pin respectively"
     (let [board (-> (make-initial-board) (add-pins 1) (add-gates 2))
           [p1] (last-added-pins board)
           [i1 i2 o3 _ _ o6] (pins-for-gates board (last-added-gates board))]
-      (add-wires board [i2 i1]) => (throws AssertionError)
-      (add-wires board [o3 o6]) => (throws AssertionError)
-      (add-wires board [o3 p1]) => (throws AssertionError))))
+      (is (thrown? AssertionError (add-wires board [i2 i1])))
+      (is (thrown? AssertionError (add-wires board [o3 o6])))
+      (is (thrown? AssertionError (add-wires board [o3 p1]))))))
 
-(facts
-  "remove-wires"
+(deftest about-removing-wires
 
-  (fact
+  (testing
     "should remove wires"
     (let [board1 (-> (make-initial-board) (add-pins 1) (add-gates 3))
           [p1] (last-added-pins board1)
@@ -129,27 +130,26 @@
           board2 (-> board1 (add-wires [o3 i5] [o3 i4] [o3 i7] [o9 i1] [o3 i2] [p1 i8]))
           [w1 w2 w3 w4 w5 w6] (last-added-wires board2)
           board3 (-> board2 (remove-wires [w1 w3 w6]))]
-      (wires-for-pin board3 p1) => empty?
-      (wires-for-pin board3 i1) => [w4]
-      (wires-for-pin board3 i2) => [w5]
-      (wires-for-pin board3 o3) => (just [w2 w5] :in-any-order)
-      (wires-for-pin board3 i4) => [w2]
-      (wires-for-pin board3 i5) => empty?
-      (wires-for-pin board3 i7) => empty?
-      (wires-for-pin board3 i8) => empty?))
+      (is (empty? (wires-for-pin board3 p1)))
+      (is (= (wires-for-pin board3 i1) [w4]))
+      (is (= (wires-for-pin board3 i2) [w5]))
+      (is (set= (wires-for-pin board3 o3) [w2 w5]))
+      (is (= (wires-for-pin board3 i4) [w2]))
+      (is (empty? (wires-for-pin board3 i5)))
+      (is (empty? (wires-for-pin board3 i7)))
+      (is (empty? (wires-for-pin board3 i8)))))
 
-  (fact
+  (testing
     "should do nothing if given wire-ids collection is empty"
     (let [board1 (-> (make-initial-board) (add-gates 1))
           [i1 _ o3] (pins-for-gates board1 (last-added-gates board1))
           board2 (-> board1 (add-wires [o3 i1]))
           board3 (-> board2 (remove-wires []))]
-      board3 => board2)))
+      (is (= board3 board2)))))
 
-(facts
-  "remove-gate"
+(deftest about-removing-gate
 
-  (fact
+  (testing
     "should remove gate, pins and wires"
     (let [board1 (-> (make-initial-board) (add-gates 3))
           [g1 g2 g3] (last-added-gates board1)
@@ -157,26 +157,25 @@
           board2 (-> board1 (add-wires [o3 i5] [o3 i7] [o6 i1] [o3 i2]))
           [_ w2 _ w4] (last-added-wires board2)
           board3 (-> board2 (remove-gate g2))]
-      (wires-for-pin board3 i1) => empty?
-      (wires-for-pin board3 i2) => [w4]
-      (wires-for-pin board3 o3) => (just [w2 w4] :in-any-order)
-      (wires-for-pin board3 i5) => (throws AssertionError)
-      (wires-for-pin board3 o6) => (throws AssertionError)
-      (wires-for-pin board3 i7) => [w2]))
+      (is (empty? (wires-for-pin board3 i1)))
+      (is (= (wires-for-pin board3 i2) [w4]))
+      (is (set= (wires-for-pin board3 o3) [w2 w4]))
+      (is (thrown? AssertionError (wires-for-pin board3 i5)))
+      (is (thrown? AssertionError (wires-for-pin board3 o6)))
+      (is (= (wires-for-pin board3 i7) [w2]))))
 
-  (fact
+  (testing
     "should be able to remove gate for which output is wired to own input"
     (let [board1 (-> (make-initial-board) (add-gates 1))
           [g1] (last-added-gates board1)
           [i1 _ o3] (pins-for-gates board1 [g1])
           board2 (-> board1 (add-wires [o3 i1]) (remove-gate g1))]
-      (wires-for-pin board2 i1) => (throws AssertionError)
-      (wires-for-pin board2 o3) => (throws AssertionError))))
+      (is (thrown? AssertionError (wires-for-pin board2 i1)))
+      (is (thrown? AssertionError (wires-for-pin board2 o3))))))
 
-(facts
-  "remove-pin"
+(deftest about-removing-pin
 
-  (fact
+  (testing
     "should remove pin and wires"
     (let [board1 (-> (make-initial-board) (add-pins 2) (add-gates 2))
           [p1 p2] (last-added-pins board1)
@@ -184,17 +183,17 @@
           board2 (-> board1 (add-wires [p1 i1] [p1 i2] [o3 i4] [p2 i5]))
           [_ _ w3 w4] (last-added-wires board2)
           board3 (-> board2 (remove-pin p1))]
-      (wires-for-pin board3 p1) => (throws AssertionError)
-      (wires-for-pin board3 i1) => empty?
-      (wires-for-pin board3 i2) => empty?
-      (wires-for-pin board3 o3) => [w3]
-      (wires-for-pin board3 i4) => [w3]
-      (wires-for-pin board3 p2) => [w4]
-      (wires-for-pin board3 i5) => [w4]))
+      (is (thrown? AssertionError (wires-for-pin board3 p1)))
+      (is (empty? (wires-for-pin board3 i1)))
+      (is (empty? (wires-for-pin board3 i2)))
+      (is (= (wires-for-pin board3 o3) [w3]))
+      (is (= (wires-for-pin board3 i4) [w3]))
+      (is (= (wires-for-pin board3 p2) [w4]))
+      (is (= (wires-for-pin board3 i5) [w4]))))
 
-  (fact
+  (testing
     "should only accept gateless pin"
     (let [board (-> (make-initial-board) (add-gates 1))
           [i1 _ o3] (pins-for-gates board (last-added-gates board))]
-      (remove-pin board i1) => (throws AssertionError)
-      (remove-pin board o3) => (throws AssertionError))))
+      (is (thrown? AssertionError (remove-pin board i1)))
+      (is (thrown? AssertionError (remove-pin board o3))))))
