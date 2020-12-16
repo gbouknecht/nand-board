@@ -32,7 +32,7 @@
 
   (testing
     "should recognize single click event"
-    (let [event {:x 2 :y 3}
+    (let [event {:x 200 :y 300}
           ui-state-1000 (-> (make-initial-ui-state :time-ms 1000
                                                    :single-clicked single-clicked)
                             (add-click-event event))
@@ -46,8 +46,8 @@
 
   (testing
     "should recognize two single click events right after each other"
-    (let [event1 {:x 2 :y 3}
-          event2 {:x 4 :y 5}
+    (let [event1 {:x 200 :y 300}
+          event2 {:x 400 :y 500}
           ui-state (-> (make-initial-ui-state :time-ms 1000
                                               :single-clicked single-clicked)
                        (add-click-event event1)
@@ -57,7 +57,7 @@
 
   (testing
     "should recognize single click event only once"
-    (let [event {:x 2 :y 3}
+    (let [event {:x 200 :y 300}
           ui-state (-> (make-initial-ui-state :time-ms 1000
                                               :single-clicked single-clicked)
                        (add-click-event event)
@@ -66,7 +66,7 @@
 
   (testing
     "double click event should not be recognized as single click event"
-    (let [event {:x 2 :y 3}
+    (let [event {:x 200 :y 300}
           ui-state (-> (make-initial-ui-state :time-ms 1000
                                               :single-clicked single-clicked)
                        (add-click-event event)
@@ -78,7 +78,7 @@
 
   (testing
     "should recognize double click event"
-    (let [event {:x 2 :y 3}
+    (let [event {:x 200 :y 300}
           ui-state-1000 (-> (make-initial-ui-state :time-ms 1000
                                                    :double-clicked double-clicked)
                             (add-click-event event))
@@ -94,8 +94,8 @@
 
   (testing
     "should recognize two double click events right after each other"
-    (let [event1 {:x 2 :y 3}
-          event2 {:x 4 :y 5}
+    (let [event1 {:x 200 :y 300}
+          event2 {:x 400 :y 500}
           ui-state-1 (-> (make-initial-ui-state :time-ms 1000
                                                 :double-clicked double-clicked)
                          (add-click-event event1)
@@ -106,7 +106,7 @@
 
   (testing
     "should recognize double click event only once"
-    (let [event {:x 2 :y 3}
+    (let [event {:x 200 :y 300}
           ui-state (-> (make-initial-ui-state :time-ms 1000
                                               :double-clicked double-clicked)
                        (add-click-event event)
@@ -118,7 +118,9 @@
 
   (testing
     "should add a gate on the specified coordinates"
-    (let [ui-state (-> (make-initial-ui-state :time-ms 1000) (add-gate-view-if-no-overlaps [200 300]) (add-gate-view-if-no-overlaps [400 500]))
+    (let [ui-state (-> (make-initial-ui-state :time-ms 1000)
+                       (add-gate-view-if-no-overlaps [200 300])
+                       (add-gate-view-if-no-overlaps [400 500]))
           gate-views (gate-views ui-state)
           gates (gates (:board (:state ui-state)))]
       (is (= (map :gate gate-views) gates))
@@ -126,7 +128,9 @@
 
   (testing
     "should not add a gate if it overlaps another gate"
-    (let [ui-state (-> (make-initial-ui-state :time-ms 1000) (add-gate-view-if-no-overlaps [200 300]) (add-gate-view-if-no-overlaps [250 350]))
+    (let [ui-state (-> (make-initial-ui-state :time-ms 1000)
+                       (add-gate-view-if-no-overlaps [200 300])
+                       (add-gate-view-if-no-overlaps [250 350]))
           gate-views (gate-views ui-state)
           gates (gates (:board (:state ui-state)))]
       (is (= (map :gate gate-views) gates))
@@ -136,7 +140,8 @@
 
   (testing
     "should tick state at specified rate"
-    (let [ui-state (-> (make-initial-ui-state :time-ms 1000 :tick-interval-ms 250) (add-gate-view-if-no-overlaps [200 300]))
+    (let [ui-state (-> (make-initial-ui-state :time-ms 1000 :tick-interval-ms 250)
+                       (add-gate-view-if-no-overlaps [200 300]))
           [gate] (map :gate (gate-views ui-state))
           get-val-output-pin (fn [{:keys [state]} gate] (get-val state (output-pin-for-gate (:board state) gate)))]
       (is (nil? (get-val-output-pin ui-state gate)))
