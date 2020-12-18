@@ -5,6 +5,7 @@
                                             make-initial-board]]
             [nand-board.ui.gate-view :refer [->GateView]]
             [nand-board.ui.view :refer [bounds
+                                        contains-coords?
                                         overlaps?]]))
 
 (def gates (-> (make-initial-board) (add-gates 2) last-added-gates))
@@ -16,6 +17,25 @@
   (testing
     "should have the correct bounds"
     (is (= (bounds (->GateView g1 [200 300]))) [(/ 275 2) 273 125 54]))
+
+  (testing
+    "should be able to say if it contains specific coordinates"
+    (let [gv1 (->GateView g1 [200 300])
+          [x0 y0 width height] (bounds gv1)
+          [x1 y1] [(+ x0 width) (+ y0 height)]]
+      (is (contains-coords? gv1 [200 300]))
+      (is (contains-coords? gv1 [x0 y0]))
+      (is (not (contains-coords? gv1 [(dec x0) y0])))
+      (is (not (contains-coords? gv1 [x0 (dec y0)])))
+      (is (contains-coords? gv1 [x1 y0]))
+      (is (not (contains-coords? gv1 [(inc x1) y0])))
+      (is (not (contains-coords? gv1 [x1 (dec y0)])))
+      (is (contains-coords? gv1 [x0 y1]))
+      (is (not (contains-coords? gv1 [(dec x0) y1])))
+      (is (not (contains-coords? gv1 [x0 (inc y1)])))
+      (is (contains-coords? gv1 [x1 y1]))
+      (is (not (contains-coords? gv1 [(inc x1) y1])))
+      (is (not (contains-coords? gv1 [x1 (inc y1)])))))
 
   (testing
     "should be able to detect overlapping view"

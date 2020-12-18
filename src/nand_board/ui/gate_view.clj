@@ -12,6 +12,11 @@
 (def ^:private inversion-diameter 15)
 (def ^:private weight 4)
 
+(defn- x0-y0-x1-y1 [bounds]
+  (let [[x0 y0 width height] bounds
+        [x1 y1] [(+ x0 width) (+ y0 height)]]
+    [x0 y0 x1 y1]))
+
 (defrecord GateView [gate center]
   View
   (draw [_ ui-state]
@@ -60,11 +65,13 @@
           width (+ wire-length size wire-length)
           height (+ size weight)]
       [left top width height]))
+  (contains-coords? [this [x y]]
+    (let [[x0 y0 x1 y1] (x0-y0-x1-y1 (bounds this))]
+      (and (<= x0 x x1)
+           (<= y0 y y1))))
   (overlaps? [this that]
-    (let [[this-x0 this-y0 this-width this-height] (bounds this)
-          [this-x1 this-y1] [(+ this-x0 this-width) (+ this-y0 this-height)]
-          [that-x0 that-y0 that-width that-height] (bounds that)
-          [that-x1 that-y1] [(+ that-x0 that-width) (+ that-y0 that-height)]]
+    (let [[this-x0 this-y0 this-x1 this-y1] (x0-y0-x1-y1 (bounds this))
+          [that-x0 that-y0 that-x1 that-y1] (x0-y0-x1-y1 (bounds that))]
       (and (or (<= that-x0 this-x0 that-x1)
                (<= that-x0 this-x1 that-x1))
            (or (<= that-y0 this-y0 that-y1)
