@@ -117,7 +117,7 @@
 (deftest about-adding-gate-views
 
   (testing
-    "should add a gate on the specified coordinates"
+    "should add a gate at the specified coordinates"
     (let [ui-state (-> (make-initial-ui-state :time-ms 1000)
                        (add-gate-view-if-no-overlaps [200 300])
                        (add-gate-view-if-no-overlaps [400 500]))
@@ -135,6 +135,18 @@
           gates (gates (:board (:state ui-state)))]
       (is (= (map :gate gate-views) gates))
       (is (= (map :center gate-views) [[200 300]])))))
+
+(deftest about-finding-view-at-coords
+
+  (testing
+    "should find view that contains given coords"
+    (let [ui-state (-> (make-initial-ui-state :time-ms 1000)
+                       (add-gate-view-if-no-overlaps [200 300])
+                       (add-gate-view-if-no-overlaps [400 500]))
+          [view1 view2] (gate-views ui-state)]
+      (is (= (view-at-coords ui-state [210 285]) view1))
+      (is (= (view-at-coords ui-state [390 505]) view2))
+      (is (nil? (view-at-coords ui-state [600 700]))))))
 
 (deftest about-ticking-state
 

@@ -5,7 +5,8 @@
             [nand-board.logic.simulator :refer [make-initial-state
                                                 tick]]
             [nand-board.ui.gate-view :refer [->GateView]]
-            [nand-board.ui.view :refer [overlaps?]]))
+            [nand-board.ui.view :refer [contains-coords?
+                                        overlaps?]]))
 
 (def ^:private max-double-click-delay-ms 500)
 
@@ -83,3 +84,6 @@
       (-> ui-state
           (update :gate-views conj gate-view)
           (assoc :state new-state)))))
+
+(defn view-at-coords [ui-state coords]
+  (some #(if (contains-coords? % coords) %) (gate-views ui-state)))
