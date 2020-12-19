@@ -25,7 +25,7 @@
 (defn- draw-ui-state [ui-state]
   (q/background 255)
   (doseq [gate-view (gate-views ui-state)]
-    (draw gate-view ui-state)))
+    (draw gate-view (:state ui-state))))
 
 (defn- mouse-clicked [ui-state event]
   (add-click-event ui-state event))

@@ -19,9 +19,8 @@
 
 (defrecord GateView [gate center]
   View
-  (draw [_ ui-state]
-    (let [state (:state ui-state)
-          board (:board state)
+  (draw [_ state]
+    (let [board (:board state)
           [i1 i2 o3] (pins-for-gates board [gate])
           [x0 y0 :as p0] [(- half-size) (- half-size)]
           [x1 _ :as p1] [0 y0]
