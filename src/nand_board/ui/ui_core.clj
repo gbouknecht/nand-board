@@ -1,22 +1,33 @@
 (ns nand-board.ui.ui-core
-  (:require [nand-board.ui.view :refer [draw]]
+  (:require [nand-board.ui.view :refer [draw
+                                        process-single-click]]
             [nand-board.ui.ui-state :refer [add-gate-view-if-no-overlaps
                                             add-click-event
                                             gate-views
                                             make-initial-ui-state
-                                            update-time-ms]]
+                                            update-time-ms
+                                            view-at-coords]]
             [quil.core :as q]
             [quil.middleware :as m]))
 
 (defn- time-ms []
   (System/currentTimeMillis))
 
+(defn- coords [event]
+  [(:x event) (:y event)])
+
+(defn- single-clicked [ui-state event]
+  (if-let [view (view-at-coords ui-state (coords event))]
+    (update ui-state :state #(process-single-click view (coords event) %))
+    ui-state))
+
 (defn- double-clicked [ui-state event]
-  (add-gate-view-if-no-overlaps ui-state [(:x event) (:y event)]))
+  (add-gate-view-if-no-overlaps ui-state (coords event)))
 
 (defn- setup-ui-state []
   (make-initial-ui-state
     :time-ms (time-ms)
+    :single-clicked single-clicked
     :double-clicked double-clicked))
 
 (defn- update-ui-state [ui-state]

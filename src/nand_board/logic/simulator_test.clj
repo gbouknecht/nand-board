@@ -10,11 +10,6 @@
                                             pins-for-gates]]
             [nand-board.logic.simulator :refer :all]))
 
-(defn- ticks [state]
-  (if (pending-events? state)
-    (lazy-seq (cons state (ticks (tick state))))
-    [state]))
-
 (defn- get-vals [state]
   (->> (pins (:board state))
        (map #(vec [% (get-val state %)]))
@@ -87,6 +82,15 @@
       (is (= (get-vals state10) {i1 1 i2 0 o3 1}))
       (is (= (get-vals state11) {i1 1 i2 1 o3 0}))
       (is (= (get-vals state01) {i1 0 i2 1 o3 1}))))
+
+  (testing
+    "input pins should be flippable"
+    (let [board (-> (make-initial-board) (add-gates 1))
+          [i1 i2 _] (pins-for-gates board (last-added-gates board))
+          state (make-initial-state board)]
+      (is (= (-> state (flip-val i1)) (set-val state i1 1)))
+      (is (= (-> state (flip-val i1) (flip-val i1)) state))
+      (is (= (-> state (flip-val i2)) (set-val state i2 1)))))
 
   (testing
     "changes to both input pins of gate at the same time should propagate as if they were set at the same time"

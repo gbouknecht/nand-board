@@ -90,6 +90,11 @@
       (update :time inc)
       process-events))
 
+(defn ticks [state]
+  (if (pending-events? state)
+    (lazy-seq (cons state (ticks (tick state))))
+    [state]))
+
 (defn get-val [state pin]
   {:pre  [(valid? ::state-spec/state state)
           (valid? ::board-spec/pin pin)]
@@ -105,3 +110,6 @@
   (-> state
       (update :event-queue add-event {:time (:time state) :pin pin :val val})
       process-events))
+
+(defn flip-val [state pin]
+  (set-val state pin (- 1 (get-val state pin))))

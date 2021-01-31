@@ -16,9 +16,9 @@
   (testing
     "initial ui-state should have defaults
      - time-ms: 0
-     - tick-interval-ms: 1000"
+     - tick-interval-ms: 250"
     (is (= (:time-ms (make-initial-ui-state)) 0))
-    (is (= (:tick-interval-ms (make-initial-ui-state)) 1000)))
+    (is (= (:tick-interval-ms (make-initial-ui-state)) 250)))
 
   (testing
     "initial ui-state should not have recognized any click events"
@@ -152,10 +152,10 @@
 
   (testing
     "should tick state at specified rate"
-    (let [ui-state (-> (make-initial-ui-state :time-ms 1000 :tick-interval-ms 250)
+    (let [ui-state (-> (make-initial-ui-state :time-ms 1000 :tick-interval-ms 500)
                        (add-gate-view-if-no-overlaps [200 300]))
           [gate] (map :gate (gate-views ui-state))
           get-val-output-pin (fn [{:keys [state]} gate] (get-val state (output-pin-for-gate (:board state) gate)))]
       (is (nil? (get-val-output-pin ui-state gate)))
-      (is (nil? (get-val-output-pin (update-time-ms ui-state 1499) gate)))
-      (is (= (get-val-output-pin (update-time-ms ui-state 1500) gate) 1)))))
+      (is (nil? (get-val-output-pin (update-time-ms ui-state 1999) gate)))
+      (is (= (get-val-output-pin (update-time-ms ui-state 2000) gate) 1)))))

@@ -21,7 +21,7 @@
         time-ms (or (:time-ms options) 0)]
     {:time-ms            time-ms
      :last-tick-time-ms  time-ms
-     :tick-interval-ms   (or (:tick-interval-ms options) 1000)
+     :tick-interval-ms   (or (:tick-interval-ms options) 250)
      :timed-click-events []
      :gate-views         []
      :state              (make-initial-state (make-initial-board))
