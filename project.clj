@@ -11,6 +11,7 @@
   :test-paths ["src"]
   :test-selectors {:default [(fn [ns] (.endsWith (str ns) "-test"))
                              (constantly true)]}
+  :java-source-paths ["src/java"]
   :target-path "target/%s"
   :profiles {:uberjar {:aot [nand-board.core]}}
   :jar-exclusions ~[test-file-pattern]
